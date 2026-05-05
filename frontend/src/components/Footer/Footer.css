@@ -1,0 +1,19 @@
+.app-footer {
+  background: var(--gradient-dark);
+  color: rgba(255,255,255,0.7);
+  text-align: center;
+  padding: var(--space-6) var(--space-8);
+  margin-top: auto;
+  border-top: 1px solid rgba(255,255,255,0.05);
+}
+
+.footer-inner {
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.app-footer p {
+  color: rgba(255,255,255,0.5);
+  font-size: 0.85rem;
+  margin: 0;
+}

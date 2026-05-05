@@ -1,0 +1,19 @@
+{
+    "name": "Alice Johnson",
+    "title": "Technical Sourcer",
+    "countryCode": "+91",
+    "phone": "9876543210",
+    "email": "ahmadhu.a@vdartinc.com",
+    "linkedin": "https:\/\/linkedin.com\/aaqil",
+    "photoUrl": "",
+    "videoUrl": "",
+    "reviews": [
+        {
+            "text": "Always goes above and beyond in her projects. Excellent collaborator.",
+            "rating": 5,
+            "author": "Verified Candidate"
+        }
+    ],
+    "id": "prof_69fa4d63cea0b",
+    "updated_at": "2026-05-05 22:04:51"
+}

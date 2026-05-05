@@ -1,0 +1,22 @@
+.modal-close {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-gray-100);
+  border: none;
+  border-radius: 50%;
+  color: var(--color-gray-500);
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.modal-close:hover {
+  background: var(--color-error);
+  color: white;
+  transform: rotate(90deg);
+}

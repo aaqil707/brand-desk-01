@@ -1,0 +1,6 @@
+[30-Apr-2026 20:56:57 Europe/Berlin] PHP Fatal error:  Uncaught Error: Call to undefined function imagecreatefromjpeg() in E:\linkedin-main\pages\api\generate_profile.php:63
+Stack trace:
+#0 E:\linkedin-main\pages\api\generate_profile.php(108): cropAndResizeImage('E:\\linkedin-mai...')
+#1 E:\linkedin-main\pages\api\generate_profile.php(233): combineImages('E:\\linkedin-mai...', 'E:\\linkedin-mai...', Array)
+#2 {main}
+  thrown in E:\linkedin-main\pages\api\generate_profile.php on line 63

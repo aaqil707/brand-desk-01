@@ -1,0 +1,799 @@
+/* ============================================
+   SIGNATURE GENERATOR — STYLES
+   ============================================ */
+
+.sig-gen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.sig-gen__main {
+  flex: 1;
+  padding: var(--space-8) var(--space-6);
+  max-width: 1440px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ── Hero ── */
+
+.sig-gen__hero {
+  margin-bottom: var(--space-10);
+}
+
+.sig-gen__back {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: none;
+  border: none;
+  color: var(--color-primary);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: var(--space-2) 0;
+  margin-bottom: var(--space-4);
+  transition: all var(--duration-fast) ease;
+}
+
+.sig-gen__back:hover {
+  color: var(--color-primary-dark);
+  transform: translateX(-4px);
+}
+
+.sig-gen__hero-content {
+  display: flex;
+  align-items: center;
+  gap: var(--space-6);
+}
+
+.sig-gen__entity-logo {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  border-radius: var(--radius-md);
+  background: white;
+  padding: var(--space-2);
+  box-shadow: var(--shadow-md);
+}
+
+.sig-gen__title {
+  font-size: clamp(1.5rem, 3vw, 2.2rem);
+  margin-bottom: var(--space-1);
+}
+
+.sig-gen__subtitle {
+  font-size: 0.95rem;
+  color: var(--color-gray-500);
+}
+
+/* ── Grid Layout ── */
+
+.sig-gen__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-8);
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .sig-gen__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ── Section Titles ── */
+
+.sig-gen__section-title {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  font-size: 1.15rem;
+  margin-bottom: var(--space-6);
+  padding-bottom: var(--space-4);
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+/* ── Form Inputs ── */
+
+.sig-gen__input-group {
+  --space-2:1rem;
+  --space-5:0rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.sig-gen__input-group label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--color-gray-700);
+  margin-bottom: var(--space-2);
+}
+
+/* ── Actions / Generate Button ── */
+
+.sig-gen__actions {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+  margin-top: var(--space-6);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--color-gray-200);
+}
+
+.sig-gen__generate-btn {
+  flex: 1;
+  min-width: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-6);
+  background: linear-gradient(135deg, #4070f4 0%, #242297 100%);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all var(--duration-normal) ease;
+  box-shadow: 0 4px 16px rgba(64, 112, 244, 0.25);
+  letter-spacing: 0.01em;
+}
+
+.sig-gen__generate-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 28px rgba(64, 112, 244, 0.35);
+}
+
+.sig-gen__generate-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.sig-gen__generate-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ── Tabs ── */
+
+.sig-gen__tabs {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-1);
+  background: var(--color-gray-100);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-4);
+}
+
+.sig-gen__tab {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: transparent;
+  border: none;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--color-gray-500);
+  cursor: pointer;
+  transition: all var(--duration-fast) ease;
+}
+
+.sig-gen__tab.active {
+  background: white;
+  color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+  font-weight: 600;
+}
+
+/* ── Preview Card ── */
+
+.sig-gen__preview-card {
+  overflow: hidden;
+}
+
+.sig-gen__preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--color-gray-200);
+}
+
+.sig-gen__preview-header h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-dark);
+}
+
+.sig-gen__preview-content {
+  min-height: 200px;
+}
+
+/* ── Empty State ── */
+
+.sig-gen__empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-12) var(--space-6);
+  text-align: center;
+  color: var(--color-gray-400);
+}
+
+.sig-gen__empty-state svg {
+  margin-bottom: var(--space-4);
+  opacity: 0.5;
+}
+
+.sig-gen__empty-state p {
+  max-width: 280px;
+  font-size: 0.9rem;
+  line-height: 1.6;
+}
+
+/* ── Rendered Signature ── */
+
+.sig-gen__rendered-container {
+  overflow-x: auto;
+}
+
+.sig-gen__rendered {
+  background: white;
+  padding: var(--space-4);
+  border: 1px solid var(--color-gray-200);
+  border-radius: var(--radius-md);
+}
+
+/* ── Copy Button ── */
+
+.sig-gen__copy-btn {
+  font-size: 0.8rem;
+}
+
+/* ── CEIPAL / Outlook Notes ── */
+
+.sig-gen__ceipal-note {
+  margin-top: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background: rgba(64, 112, 244, 0.06);
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+}
+
+.sig-gen__ceipal-note p {
+  font-size: 0.82rem;
+  color: var(--color-gray-600);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ============================================
+   INSTRUCTION CONTENT BLOCK
+   ============================================ */
+
+.sig-gen__instructions {
+  --space-8:1rem;
+  margin-bottom: var(--space-8);
+  overflow: hidden;
+}
+
+.sig-gen__instructions-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: var(--space-5) var(--space-6);
+  cursor: pointer;
+  text-align: left;
+  transition: background var(--duration-fast) ease;
+  border-radius: var(--radius-lg);
+  font-family: var(--font-body);
+}
+
+.sig-gen__instructions-toggle:hover {
+  background: var(--color-gray-100);
+}
+
+.sig-gen__instructions-toggle-left {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.sig-gen__instructions-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, rgba(64, 112, 244, 0.1), rgba(36, 34, 151, 0.1));
+  border-radius: var(--radius-md);
+  color: var(--color-primary);
+  flex-shrink: 0;
+}
+
+.sig-gen__instructions-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-dark);
+  margin-bottom: 2px;
+}
+
+.sig-gen__instructions-desc {
+  font-size: 0.82rem;
+  color: var(--color-gray-500);
+  margin: 0;
+}
+
+.sig-gen__instructions-chevron {
+  color: var(--color-gray-400);
+  transition: transform var(--duration-normal) var(--ease-out);
+  flex-shrink: 0;
+}
+
+.sig-gen__instructions-chevron.open {
+  transform: rotate(180deg);
+}
+
+/* ── Instruction Tab Switcher ── */
+
+.sig-gen__instr-tabs {
+  display: flex;
+  gap: var(--space-2);
+  padding: 0 var(--space-6);
+  margin-bottom: var(--space-4);
+}
+
+.sig-gen__instr-tab {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-gray-100);
+  border: 1.5px solid transparent;
+  border-radius: var(--radius-full);
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 500;
+  color: var(--color-gray-500);
+  cursor: pointer;
+  transition: all var(--duration-fast) ease;
+}
+
+.sig-gen__instr-tab.active {
+  background: rgba(64, 112, 244, 0.08);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.sig-gen__instr-tab:hover:not(.active) {
+  background: var(--color-gray-200);
+}
+
+/* ── Steps Grid ── */
+
+.sig-gen__steps-wrapper {
+  overflow: hidden;
+}
+
+.sig-gen__steps-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: var(--space-4);
+  padding: 0 var(--space-6) var(--space-6);
+  overflow: hidden;
+}
+
+/* ── Step Card ── */
+
+.sig-gen__step-card {
+  position: relative;
+  padding: var(--space-6) var(--space-5);
+  background: var(--color-gray-100);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-gray-200);
+  transition: all var(--duration-normal) var(--ease-out);
+  overflow: hidden;
+}
+
+.sig-gen__step-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--gradient-brand, linear-gradient(135deg, #4070f4, #242297));
+  opacity: 0;
+  transition: opacity var(--duration-fast) ease;
+}
+
+.sig-gen__step-card:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(64, 112, 244, 0.1);
+}
+
+.sig-gen__step-card:hover::before {
+  opacity: 1;
+}
+
+.sig-gen__step-number {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: var(--color-primary);
+  color: white;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.sig-gen__step-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  background: linear-gradient(135deg, rgba(64, 112, 244, 0.12), rgba(36, 34, 151, 0.08));
+  border-radius: var(--radius-md);
+  color: var(--color-primary);
+  margin-bottom: var(--space-4);
+  transition: transform var(--duration-fast) ease;
+}
+
+.sig-gen__step-card:hover .sig-gen__step-icon-wrap {
+  transform: scale(1.05);
+}
+
+.sig-gen__step-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-dark);
+  margin-bottom: var(--space-2);
+}
+
+.sig-gen__step-desc {
+  font-size: 0.8rem;
+  line-height: 1.6;
+  color: var(--color-gray-500);
+  margin: 0;
+}
+
+/* ============================================
+   CTA BANNER
+   ============================================ */
+
+.sig-gen__cta-banner {
+  background: linear-gradient(135deg, #0a1628 0%, #1a2744 50%, #162050 100%);
+  padding: var(--space-6) var(--space-8);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.sig-gen__cta-inner {
+  max-width: 1440px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+}
+
+.sig-gen__cta-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  background: linear-gradient(135deg, #4070f4, #242297);
+  border-radius: var(--radius-md);
+  color: white;
+  flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(64, 112, 244, 0.3);
+}
+
+.sig-gen__cta-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sig-gen__cta-question {
+  font-size: 1rem;
+  font-weight: 700;
+  color: white;
+}
+
+.sig-gen__cta-hint {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.sig-gen__cta-action {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-5);
+  background: linear-gradient(135deg, #4070f4, #242297);
+  color: white;
+  border: none;
+  border-radius: var(--radius-full);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--duration-fast) ease;
+  white-space: nowrap;
+  box-shadow: 0 4px 16px rgba(64, 112, 244, 0.3);
+}
+
+.sig-gen__cta-action:hover {
+  transform: translateX(4px);
+  box-shadow: 0 6px 24px rgba(64, 112, 244, 0.4);
+}
+
+/* ── Responsive ── */
+
+@media (max-width: 768px) {
+  .sig-gen__hero-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-4);
+  }
+
+  .sig-gen__entity-logo {
+    width: 48px;
+    height: 48px;
+  }
+
+  .sig-gen__cta-inner {
+    flex-direction: column;
+    text-align: center;
+    gap: var(--space-4);
+  }
+
+  .sig-gen__cta-action {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .sig-gen__instructions-toggle-left {
+    flex-direction: column;
+    text-align: center;
+    gap: var(--space-2);
+  }
+
+  .sig-gen__instructions-toggle {
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+
+  .sig-gen__instr-tabs {
+    flex-wrap: wrap;
+  }
+}
+
+/* ── Title Dropdown ── */
+.sig-gen__title-dropdown {
+  position: relative;
+}
+
+.sig-gen__title-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  color: var(--color-gray-300);
+}
+
+.sig-gen__title-trigger.has-value {
+  color: var(--color-text);
+}
+
+.sig-gen__title-arrow {
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+}
+
+.sig-gen__title-arrow.open {
+  transform: rotate(180deg);
+}
+
+.sig-gen__title-options {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-top: none;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 100;
+  max-height: 280px;
+  display: flex;
+  flex-direction: column;
+}
+
+.sig-gen__title-search-wrap {
+  padding: 8px;
+  border-bottom: 1px solid var(--color-border);
+  position: sticky;
+  top: 0;
+  background: var(--color-surface);
+  z-index: 2;
+}
+
+.sig-gen__title-search {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  background: var(--color-bg);
+  color: var(--color-text);
+  outline: none;
+}
+
+.sig-gen__title-search:focus {
+  border-color: var(--color-primary);
+}
+
+.sig-gen__title-list {
+  overflow-y: auto;
+  max-height: 220px;
+}
+
+.sig-gen__title-option {
+  padding: 9px 14px;
+  cursor: pointer;
+  font-size: 0.88rem;
+  color: var(--color-text);
+  transition: background 0.15s ease;
+}
+
+.sig-gen__title-option:hover {
+  background: rgba(var(--color-primary-rgb, 99, 102, 241), 0.1);
+}
+
+.sig-gen__title-option.selected {
+  background: rgba(var(--color-primary-rgb, 99, 102, 241), 0.15);
+  color: var(--color-primary);
+  font-weight: 500;
+}
+
+.sig-gen__title-option.disabled {
+  color: var(--color-gray-500);
+  cursor: default;
+  font-style: italic;
+}
+
+/* ── Phone Row ── */
+.sig-gen__phone-row {
+  display: flex;
+  gap: 8px;
+}
+
+
+
+.sig-gen__phone-input {
+  flex: 1;
+}
+
+/* ── Field Error ── */
+.sig-gen__field-error {
+  display: block;
+  color: #ef4444;
+  font-size: 0.78rem;
+  margin-top: 4px;
+  padding: 10px 8px;
+  background: rgba(239, 68, 68, 0.08);
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+.input-error {
+  border-color: #ef4444 !important;
+}
+
+/* ── Copy Button (inline) ── */
+.sig-gen__copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.sig-gen__copy-btn:hover {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+
+/* Tooltip styles */
+.sig-gen__info-tooltip {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: help;
+}
+
+.sig-gen__info-tooltip .tooltip-text {
+  visibility: hidden;
+  width: 220px;
+  background-color: #1f2937;
+  color: #fff;
+  text-align: center;
+  border-radius: 6px;
+  padding: 8px 12px;
+  position: absolute;
+  z-index: 1000;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  opacity: 0;
+  transition: opacity 0.2s, visibility 0.2s;
+  font-size: 12px;
+  line-height: 1.4;
+  font-weight: 400;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  pointer-events: none;
+}
+
+.sig-gen__info-tooltip .tooltip-text::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  margin-left: -5px;
+  border-width: 5px;
+  border-style: solid;
+  border-color: #1f2937 transparent transparent transparent;
+}
+
+.sig-gen__info-tooltip:hover .tooltip-text {
+  visibility: visible;
+  opacity: 1;
+}
+
+.sig-gen__info-icon {
+  color: #6b7280;
+  transition: color 0.2s;
+}
+
+.sig-gen__info-tooltip:hover .sig-gen__info-icon {
+  color: var(--color-primary);
+}

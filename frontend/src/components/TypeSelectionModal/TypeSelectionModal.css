@@ -1,0 +1,102 @@
+.type-modal-panel {
+  max-width: 520px;
+  text-align: center;
+  padding: var(--space-8) var(--space-8) var(--space-6);
+  position: relative;
+}
+
+.modal-close {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-gray-100);
+  border: none;
+  border-radius: 50%;
+  color: var(--color-gray-500);
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+.modal-close:hover {
+  background: var(--color-error);
+  color: white;
+  transform: rotate(90deg);
+}
+
+.type-modal-header h2 {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  margin-bottom: var(--space-2);
+}
+
+.type-modal-header p {
+  color: var(--color-gray-500);
+  font-size: 0.92rem;
+  margin-bottom: var(--space-6);
+}
+
+.type-selection-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.type-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-6) var(--space-4);
+  background: var(--color-surface);
+  border: 1.5px solid var(--color-gray-200);
+  border-radius: var(--radius-xl);
+  cursor: pointer;
+  transition: all 0.3s var(--ease-out);
+  font-family: var(--font-body);
+}
+
+.type-option:hover {
+  border-color: var(--color-primary);
+}
+
+.type-icon {
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-lg);
+  color: white;
+}
+
+.type-icon-linkedin {
+  background: linear-gradient(135deg, #0077b5, #00a0dc);
+  box-shadow: 0 4px 16px rgba(0,119,181,0.3);
+}
+
+.type-icon-email {
+  background: var(--gradient-brand);
+  box-shadow: 0 4px 16px rgba(64,112,244,0.3);
+}
+
+.type-label {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-dark);
+}
+
+.type-hint {
+  font-size: 0.78rem;
+  color: var(--color-gray-400);
+}
+
+@media (max-width: 480px) {
+  .type-selection-grid {
+    grid-template-columns: 1fr;
+  }
+}

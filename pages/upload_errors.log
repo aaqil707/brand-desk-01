@@ -1,0 +1,7 @@
+[05-May-2026 15:15:17 Europe/Berlin] PHP Warning:  fileperms(): stat failed for E:\version-4\pages/employee_photos/ in E:\version-4\pages\upload.php on line 29
+[05-May-2026 15:15:17 Europe/Berlin] Processing file: image-removebg-preview (1).png
+[05-May-2026 15:15:17 Europe/Berlin] Attempting to move file to: E:\version-4\pages/employee_photos/image_removebg_preview__1__1777986917_69f9ed653ef1c.png
+[05-May-2026 15:15:17 Europe/Berlin] Successfully uploaded: E:\version-4\pages/employee_photos/image_removebg_preview__1__1777986917_69f9ed653ef1c.png
+[05-May-2026 15:30:19 Europe/Berlin] Processing file: Business1-removebg-preview.png
+[05-May-2026 15:30:19 Europe/Berlin] Attempting to move file to: E:\version-4\pages/employee_photos/Business1_removebg_preview_1777987819_69f9f0ebde501.png
+[05-May-2026 15:30:20 Europe/Berlin] Successfully uploaded: E:\version-4\pages/employee_photos/Business1_removebg_preview_1777987819_69f9f0ebde501.png
