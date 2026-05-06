@@ -571,27 +571,36 @@ export default function SignatureGenerator({ entity, onBack }) {
 
       if (!foundRow) throw new Error(`Employee ID "${empId}" not found in the sheet.`);
 
-      const ratingRaw = foundRow[7]?.v || '0';
-      const reviewText = foundRow[8]?.v || '';
-      const ratings = String(ratingRaw).split(/\/n/).map(r => parseFloat(r.trim()) || 0);
-      const parsedReviews = [];
+       const parseSheetColumn = (cellData) => {
+         if (!cellData) return [];
+         return String(cellData)
+           .split(/\s*[\/\\]n\s*|\s*\n\s*/)
+           .map(item => item.trim())
+           .filter(item => item !== '');
+       };
 
-      if (reviewText) {
-        const chunks = reviewText.split(/\/n|\/e/).map(s => s.trim()).filter(Boolean);
-        chunks.forEach((chunk, index) => {
-          const lastDashIndex = chunk.lastIndexOf('-');
-          let text, author;
-          if (lastDashIndex !== -1) {
-            text = chunk.substring(0, lastDashIndex).trim();
-            author = chunk.substring(lastDashIndex + 1).trim();
-          } else {
-            text = chunk;
-            author = 'Verified Candidate';
-          }
-          const rating = ratings[index] !== undefined ? ratings[index] : (ratings[0] || 0);
-          parsedReviews.push({ text, author, rating });
-        });
-      }
+       const rawRatings = parseSheetColumn(foundRow[7]?.v);
+       const rawReviews = parseSheetColumn(foundRow[8]?.v);
+
+       const parsedReviews = rawReviews.map((text, index) => {
+         const ratingStr = rawRatings[index] !== undefined ? rawRatings[index] : (rawRatings[0] || '5');
+         let ratingNum = parseFloat(ratingStr);
+         if (isNaN(ratingNum)) ratingNum = 5;
+
+         const lastDashIndex = text.lastIndexOf('-');
+         let reviewText = text;
+         let author = 'Verified Candidate';
+         if (lastDashIndex !== -1) {
+           reviewText = text.substring(0, lastDashIndex).trim();
+           author = text.substring(lastDashIndex + 1).trim();
+         }
+
+         return {
+           text: reviewText,
+           rating: ratingNum,
+           author: author
+         };
+       });
 
       const res = await profileApi.updateReview(inputProfileId, parsedReviews);
       if (res.success) {
