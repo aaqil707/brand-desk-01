@@ -186,37 +186,5 @@ export const profileApi = {
       body: JSON.stringify({ id, reviews }),
     });
   },
-
-  async fetchGoogleSheetData(empId) {
-    const url = `https://docs.google.com/spreadsheets/d/1d_WRPltqOlzT55bx-tNs0qvd-t9RB9EAeTTsp8m8HdM/gviz/tq?tqx=out:json&gid=1611340410&headers=1`;
-    const response = await fetch(url);
-    if (!response.ok) throw new Error('Failed to fetch from Google Sheets.');
-    const textResponse = await response.text();
-    const jsonString = textResponse.substring(textResponse.indexOf('{'), textResponse.lastIndexOf('}') + 1);
-    const data = JSON.parse(jsonString);
-
-    if (!data.table || !data.table.rows) throw new Error('Unexpected data format from Google Sheets.');
-
-    const rows = data.table.rows;
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i];
-      if (!row || !row.c) continue;
-      const cellValue = row.c[0]?.v || row.c[0]?.f || row.c[0];
-      if (cellValue !== null && String(cellValue).trim().toLowerCase() === String(empId).trim().toLowerCase()) {
-        const getCellValue = (c) => (c && (c.v !== null && c.v !== undefined ? c.v : (c.f !== null && c.f !== undefined ? c.f : '')));
-        return {
-          name: getCellValue(row.c[1]),
-          title: getCellValue(row.c[2]),
-          email: getCellValue(row.c[3]),
-          linkedin: getCellValue(row.c[4]),
-          teamLead: getCellValue(row.c[5]),
-          leadName: getCellValue(row.c[6]),
-          ratings: getCellValue(row.c[7]),
-          reviews: getCellValue(row.c[8]),
-        };
-      }
-    }
-    throw new Error(`Employee ID "${empId}" not found in the sheet.`);
-  },
 };
 

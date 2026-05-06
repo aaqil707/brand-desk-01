@@ -149,19 +149,26 @@ export default function SignatureGenerator({ entity, onBack }) {
   const [fetchedReview, setFetchedReview] = useState('');
   const [fetchedRating, setFetchedRating] = useState(0);
 
-  // Fetch profiles from database on load
+  // Live polling: fetch profiles every 5 seconds
   useEffect(() => {
     const fetchUserProfiles = async () => {
       try {
         const res = await profileApi.getUserProfiles();
         if (res.success && res.data) {
-          setSavedProfiles(res.data);
+          setSavedProfiles(prev => {
+            if (JSON.stringify(prev) !== JSON.stringify(res.data)) {
+              return res.data;
+            }
+            return prev;
+          });
         }
       } catch (err) {
         console.error('Error fetching user profiles:', err);
       }
     };
     fetchUserProfiles();
+    const intervalId = setInterval(fetchUserProfiles, 5000);
+    return () => clearInterval(intervalId);
   }, []);
 
   // Close title dropdown when clicking outside
@@ -237,11 +244,11 @@ export default function SignatureGenerator({ entity, onBack }) {
     t.toLowerCase().includes(titleSearch.toLowerCase())
   );
 
-    const handleLoadProfile = async () => {
-      if (!inputProfileId) return;
+    const loadProfileData = async (profileIdToLoad) => {
+      if (!profileIdToLoad) return;
       setIsLoadingProfile(true);
       try {
-        const res = await profileApi.getProfile(inputProfileId);
+        const res = await profileApi.getProfile(profileIdToLoad);
         if (res.success && res.data) {
           setFormData({
             name: res.data.name || '',
@@ -254,7 +261,7 @@ export default function SignatureGenerator({ entity, onBack }) {
             leadName: res.data.leadName || ''
           });
           setVideoUrl(res.data.videoUrl || '');
-          setProfileId(inputProfileId);
+          setProfileId(profileIdToLoad);
 
           if (res.data.email && !res.data.email.endsWith(config.emailDomain)) {
             setEmailError(`Profile loaded from another entity. Please update the email domain to ${config.emailDomain}`);
@@ -263,7 +270,6 @@ export default function SignatureGenerator({ entity, onBack }) {
             setEmailError('');
             setIsGenerated(true);
           }
-          // Note: we cannot easily populate file inputs (photo, reviews) for security reasons
         } else {
           alert('Profile not found.');
         }
@@ -272,6 +278,15 @@ export default function SignatureGenerator({ entity, onBack }) {
         alert('Failed to load profile.');
       } finally {
         setIsLoadingProfile(false);
+      }
+    };
+
+    // Auto-assign: selecting a profile from the dropdown immediately loads it
+    const handleProfileSelect = (e) => {
+      const selectedId = e.target.value;
+      setInputProfileId(selectedId);
+      if (selectedId) {
+        loadProfileData(selectedId);
       }
     };
 
@@ -342,8 +357,10 @@ export default function SignatureGenerator({ entity, onBack }) {
         const profileData = {
           id: profileId || undefined,
           ...formData,
+          empId,
           photoUrl,
           videoUrl,
+          reviews
         };
 
         const saveRes = await profileApi.saveProfile(profileData);
@@ -574,7 +591,7 @@ export default function SignatureGenerator({ entity, onBack }) {
       const rawReviewsData = foundRow[8]?.v || '';
       const rawRatingsData = foundRow[7]?.v || '';
 
-      const splitRegex = /\s*(?:\r?\n|\\n|\/n|\||,)\s*/i;
+      const splitRegex = /\s*(?:\r?\n|\\n|\/n|\|)\s*/i;
       const rawReviews = String(rawReviewsData).split(splitRegex).map(r => r.trim()).filter(r => r !== '');
       const rawRatings = String(rawRatingsData).split(splitRegex).map(r => r.trim()).filter(r => r !== '');
       console.log("2. SPLIT RATINGS ARRAY:", rawRatings);
@@ -598,9 +615,13 @@ export default function SignatureGenerator({ entity, onBack }) {
 
       console.log("3. FINAL PAYLOAD:", parsedReviews);
 
-      // Removed call to profileApi.updateReview as we now fetch live
-      setSheetSuccess(`Successfully fetched data for Employee ID ${empId}`);
-      setFetchedReview(parsedReviews);
+      const res = await profileApi.updateReview(inputProfileId, parsedReviews);
+      if (res.success) {
+        setSheetSuccess('Reviews updated successfully for the selected profile!');
+        setFetchedReview(parsedReviews);
+      } else {
+        throw new Error(res.message || 'Failed to update reviews on server.');
+      }
     } catch (err) {
       setSheetError(err.message || 'Error updating reviews.');
     } finally {
@@ -680,7 +701,7 @@ ${linkedinBlock}
 <tbody>
 <tr>
 <td width="80" valign="top" style="padding-right: 20px; border: none;">
-<a href="https://www.vdart.com" target="_blank" rel="noopener noreferrer" style="border: none; text-decoration: none;">
+<a href="https://www.vdart.com" target="_blank" rel="noreferrer" style="border: none; text-decoration: none;">
 <img src="${config.logo}" alt="${entity.title}" width="90" style="display: block; max-width: 110px; height: auto; border: none;" />
 </a>
 </td>
@@ -913,25 +934,34 @@ ${linkedinBlock}
               <div className="sig-gen__input-group" style={{ backgroundColor: '#f0f4f8', padding: '15px', borderRadius: '8px', marginBottom: '20px', border: '1px solid #d1d5db' }}>
                 <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '10px' }}>Fetch Data via Google Sheets (Optional)</label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                    <div style={{ display: 'flex', gap: '10px' }}>
-                      <input
-                        className="input-field"
-                        type="text"
-                        placeholder="Employee ID"
-                        value={empId}
-                        onChange={(e) => setEmpId(e.target.value)}
-                        style={{ flex: 1 }}
-                      />
-                      <button
-                        type="button"
-                        className="btn btn-secondary"
-                        onClick={handleFetchSheetData}
-                        disabled={isFetchingSheet}
-                        style={{ whiteSpace: 'nowrap' }}
-                      >
-                        {isFetchingSheet ? 'Fetching...' : 'Fetch Data'}
-                      </button>
-                    </div>
+                  <div style={{ display: 'flex', gap: '10px' }}>
+                    <input
+                      className="input-field"
+                      type="text"
+                      placeholder="Employee ID"
+                      value={empId}
+                      onChange={(e) => setEmpId(e.target.value)}
+                      style={{ flex: 1 }}
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={handleFetchSheetData}
+                      disabled={isFetchingSheet}
+                      style={{ whiteSpace: 'nowrap' }}
+                    >
+                      {isFetchingSheet ? 'Fetching...' : 'Fetch Data'}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={handleUpdateReview}
+                      disabled={isFetchingSheet || !inputProfileId}
+                      style={{ whiteSpace: 'nowrap' }}
+                    >
+                      Update Review
+                    </button>
+                  </div>
                   {sheetError && <small className="sig-gen__field-error" style={{ color: '#d9534f' }}>{sheetError}</small>}
                   {sheetSuccess && <small style={{ color: '#28a745', fontSize: '0.85rem' }}>{sheetSuccess}</small>}
                 </div>
@@ -956,22 +986,13 @@ ${linkedinBlock}
                       className="input-field"
                       id="inputProfileId"
                       value={inputProfileId}
-                      onChange={(e) => setInputProfileId(e.target.value)}
+                      onChange={handleProfileSelect}
                     >
                       <option value="">-- Create New Profile --</option>
                       {savedProfiles.map(p => (
                         <option key={p.id} value={p.id}>{p.name} ({p.id}) - {new Date(p.date).toLocaleDateString()}</option>
                       ))}
                     </select>
-                    <button 
-                      type="button" 
-                      className="btn btn-secondary" 
-                      onClick={handleLoadProfile}
-                      disabled={!inputProfileId || isLoadingProfile}
-                      style={{ whiteSpace: 'nowrap' }}
-                    >
-                      {isLoadingProfile ? 'Loading...' : 'Load Profile'}
-                    </button>
                   </div>
                 </div>
 
@@ -1230,7 +1251,7 @@ ${linkedinBlock}
                                             )}
                                           </div>
                                           <div>
-                                            <a href={`${window.location.origin}/profile/${profileId}`} style={{ color: "rgb(12, 12, 12)", textDecoration: "none", fontSize: "10.67px", fontWeight: "bold", fontStyle: "italic", border: "none", fontFamily: "'Montserrat', Arial, sans-serif" }}>To know more, click here</a>
+                                            <a href={`${window.location.origin}/profile/${profileId}`} target="_blank" rel="noopener noreferrer" style={{ color: "rgb(12, 12, 12)", textDecoration: "none", fontSize: "10.67px", fontWeight: "bold", fontStyle: "italic", border: "none", fontFamily: "'Montserrat', Arial, sans-serif" }}>To know more, click here</a>
                                           </div>
                                         </td>
                                       </tr>
@@ -1315,7 +1336,7 @@ ${linkedinBlock}
                                             )}
                                           </div>
                                           <div>
-                                            <a href={`${window.location.origin}/profile/${profileId}`} style={{ color: "rgb(11, 11, 11) !important", textDecoration: "none !important", fontSize: "10px !important", fontWeight: "bold !important", fontStyle: "italic !important", fontFamily: "'Montserrat', Arial, sans-serif !important" }}>To know more, click here</a>
+                                            <a href={`${window.location.origin}/profile/${profileId}`} target="_blank" rel="noopener noreferrer" style={{ color: "rgb(11, 11, 11) !important", textDecoration: "none !important", fontSize: "10px !important", fontWeight: "bold !important", fontStyle: "italic !important", fontFamily: "'Montserrat', Arial, sans-serif !important" }}>To know more, click here</a>
                                           </div>
                                           {fetchedReview && (
                                             <div style={{ marginTop: "10px !important", padding: "10px !important", borderLeft: `3px solid ${config.color} !important`, backgroundColor: "#f9f9f9 !important", borderRadius: "0 4px 4px 0 !important", fontFamily: "'Montserrat', Arial, sans-serif !important" }}>
