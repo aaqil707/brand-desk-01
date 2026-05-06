@@ -574,7 +574,7 @@ export default function SignatureGenerator({ entity, onBack }) {
        const parseSheetColumn = (cellData) => {
          if (!cellData) return [];
          return String(cellData)
-           .split(/\s*[\/\\]n\s*|\s*\n\s*/)
+           .split(/\s*(?:\r?\n|\\n|\/n)\s*/)
            .map(item => item.trim())
            .filter(item => item !== '');
        };
@@ -584,8 +584,10 @@ export default function SignatureGenerator({ entity, onBack }) {
 
        const parsedReviews = rawReviews.map((text, index) => {
          const ratingStr = rawRatings[index] !== undefined ? rawRatings[index] : (rawRatings[0] || '5');
-         let ratingNum = parseFloat(ratingStr);
-         if (isNaN(ratingNum)) ratingNum = 5;
+         
+         const match = String(ratingStr).match(/([0-5](\.\d+)?)/);
+         let ratingNum = match ? parseFloat(match[1]) : 5;
+         ratingNum = Math.max(1, Math.min(5, ratingNum));
 
          const lastDashIndex = text.lastIndexOf('-');
          let reviewText = text;
