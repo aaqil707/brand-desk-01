@@ -27,6 +27,45 @@ export default function ProfilePage() {
     fetchProfile();
   }, [id]);
 
+  useEffect(() => {
+    if (!profile?.empId) return;
+
+    const intervalId = setInterval(async () => {
+      try {
+        const response = await fetch('https://docs.google.com/spreadsheets/d/1d_WRPltqOlzT55bx-tNs0qvd-t9RB9EAeTTsp8m8HdM/gviz/tq?tqx=out:json&gid=1611340410');
+        const text = await response.text();
+        const jsonString = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
+        const data = JSON.parse(jsonString);
+        const { cols, rows } = data.table;
+
+        const empIdColIndex = cols.findIndex(col => col.label === 'empId');
+        const nameColIndex = cols.findIndex(col => col.label === 'Name');
+        const titleColIndex = cols.findIndex(col => col.label === 'Designation');
+        const reviewsColIndex = cols.findIndex(col => col.label === 'Reviews');
+
+        if (empIdColIndex === -1) return;
+
+        const row = rows.find(r => r.c[empIdColIndex]?.v === profile.empId);
+        if (row) {
+          const newName = row.c[nameColIndex]?.v;
+          const newTitle = row.c[titleColIndex]?.v;
+          const newReviews = row.c[reviewsColIndex]?.v;
+
+          setProfile(prev => ({
+            ...prev,
+            name: newName || prev.name,
+            title: newTitle || prev.title,
+            reviews: newReviews ? (typeof newReviews === 'string' ? JSON.parse(newReviews) : newReviews) : prev.reviews
+          }));
+        }
+      } catch (err) {
+        console.error('Polling error:', err);
+      }
+    }, 5000);
+
+    return () => clearInterval(intervalId);
+  }, [profile?.empId]);
+
   if (loading) {
     return (
       <div className="profile-page-loading">
@@ -45,29 +84,6 @@ export default function ProfilePage() {
     );
   }
 
-  // Parse YouTube or Vimeo URL to embed
-  const renderVideo = (videoUrl) => {
-    if (!videoUrl) return null;
-    let embedUrl = videoUrl;
-    if (videoUrl.includes('youtube.com/watch?v=')) {
-      embedUrl = videoUrl.replace('watch?v=', 'embed/');
-    } else if (videoUrl.includes('youtu.be/')) {
-      embedUrl = videoUrl.replace('youtu.be/', 'youtube.com/embed/');
-    }
-
-    return (
-      <div className="video-container">
-        <iframe
-          src={embedUrl}
-          title="Personal Video Message"
-          frameBorder="0"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        ></iframe>
-      </div>
-    );
-  };
-
   return (
     <div className="profile-container">
       <div className="profile-header">
@@ -80,11 +96,6 @@ export default function ProfilePage() {
       <div className="hero-section">
         <h1>Meet Your Future Recruiter</h1>
         <p>I'm here to guide you to your next career opportunity.</p>
-        {profile.videoUrl ? renderVideo(profile.videoUrl) : (
-           <div className="video-container">
-              <img src="https://via.placeholder.com/1280x720/cccccc/ffffff?text=No+Video+Provided" alt="Video Placeholder" />
-           </div>
-        )}
       </div>
 
       <div className="card recruiter-info">
@@ -160,7 +171,7 @@ export default function ProfilePage() {
           </div>
         </div>
       )}
-
+{/*
       <div className="feedback-section">
         <h2>How Was Your Experience?</h2>
         <div className="feedback-buttons">
@@ -174,7 +185,7 @@ export default function ProfilePage() {
           </a>
         </div>
       </div>
-
+*/}
       <div className="cta-section">
         {profile.linkedin && (
           <a href={profile.linkedin} target="_blank" rel="noreferrer" className="cta-button cta-primary">

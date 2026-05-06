@@ -60,9 +60,7 @@
   cursor: default;
 }
 
-header.app-header.glass-light {
-  /* padding removed to maintain fixed height */
-}
+
 
 .brand-logo-wrapper {
   position: relative;

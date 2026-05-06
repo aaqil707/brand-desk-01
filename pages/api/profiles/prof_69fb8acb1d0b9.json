@@ -4,13 +4,12 @@
     "title": "Software Engineer",
     "countryCode": "+91",
     "phone": "9876543210",
-    "email": "alice.smith@vdartdigital.com",
+    "email": "alice.smith@trustpeople.com",
     "linkedin": "linkedin.com\/in\/alicesmith1",
-    "teamLead": "no",
+    "teamLead": "yes",
     "leadName": "Bob Johnson",
     "empId": "EMP001",
     "photoUrl": "",
-    "videoUrl": "",
     "reviews": [
         {
             "text": "Excellent performer, 123 consistently meets all deadlines and writes clean code.",
@@ -23,5 +22,5 @@
             "rating": 5
         }
     ],
-    "updated_at": "2026-05-06 20:57:10"
+    "updated_at": "2026-05-06 23:04:38"
 }

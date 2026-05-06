@@ -1,0 +1,21 @@
+{
+    "id": "prof_69fbad9dc2c7f",
+    "name": "Charlie Davis",
+    "title": "Data Analyst",
+    "countryCode": "+91",
+    "phone": "9876543210",
+    "email": "charlie.davis@vdartdigital.com",
+    "linkedin": "https:\/\/linkedin.com\/in\/charliedavis",
+    "teamLead": "No",
+    "leadName": "Alice Smith",
+    "empId": "EMP002",
+    "photoUrl": "",
+    "reviews": [
+        {
+            "text": "Strong analytical skills, but needs to improve on presentation and communication.",
+            "author": "Verified Candidate",
+            "rating": 3.8
+        }
+    ],
+    "updated_at": "2026-05-06 23:07:55"
+}

@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Header from '../../components/Header/Header';
 import Footer from '../../components/Footer/Footer';
-import * as XLSX from 'xlsx';
 import { uploadApi, profileApi } from '../../api/client';
 import './SignatureGenerator.css';
 
@@ -131,8 +130,6 @@ export default function SignatureGenerator({ entity, onBack }) {
   const titleDropdownRef = useRef(null);
   
   const [profilePhoto, setProfilePhoto] = useState(null);
-  const [videoUrl, setVideoUrl] = useState('');
-  const [reviewsFile, setReviewsFile] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isLoadingProfile, setIsLoadingProfile] = useState(false);
   const [profileId, setProfileId] = useState('');
@@ -260,10 +257,9 @@ export default function SignatureGenerator({ entity, onBack }) {
             teamLead: res.data.teamLead || '',
             leadName: res.data.leadName || ''
           });
-          setVideoUrl(res.data.videoUrl || '');
-          setProfileId(profileIdToLoad);
+           setProfileId(profileIdToLoad);
 
-          if (res.data.email && !res.data.email.endsWith(config.emailDomain)) {
+           if (res.data.email && !res.data.email.endsWith(config.emailDomain)) {
             setEmailError(`Profile loaded from another entity. Please update the email domain to ${config.emailDomain}`);
             setIsGenerated(false);
           } else {
@@ -319,34 +315,11 @@ export default function SignatureGenerator({ entity, onBack }) {
           }
         }
 
+        // Strictly use fetched reviews from Google Sheets
         let reviews = [];
-        if (reviewsFile) {
-          const buffer = await reviewsFile.arrayBuffer();
-          const workbook = XLSX.read(buffer, { type: 'array' });
-          const firstSheetName = workbook.SheetNames[0];
-          const worksheet = workbook.Sheets[firstSheetName];
-          const data = XLSX.utils.sheet_to_json(worksheet);
-          
-          reviews = data.map(row => ({
-            text: row['Review'] || row['Review Text'] || row['Text'] || row['Feedback'] || '',
-            rating: parseInt(row['Rating'] || row['Stars'] || 5),
-            author: row['Name'] || row['Author'] || row['Reviewer'] || 'Anonymous'
-          })).filter(r => r.text);
-
-          // Add fetched review from Google Sheets if available
-          if (fetchedReview && Array.isArray(fetchedReview)) {
-            reviews = [...reviews, ...fetchedReview];
-          } else if (fetchedReview) {
-            reviews.push({
-              text: fetchedReview,
-              rating: fetchedRating || 5,
-              author: 'Verified Candidate'
-            });
-          }
-        } else if (fetchedReview && Array.isArray(fetchedReview)) {
+        if (fetchedReview && Array.isArray(fetchedReview)) {
           reviews = [...fetchedReview];
         } else if (fetchedReview) {
-          // If no file uploaded but we have a fetched review, still save it
           reviews = [{
             text: fetchedReview,
             rating: fetchedRating || 5,
@@ -359,7 +332,7 @@ export default function SignatureGenerator({ entity, onBack }) {
           ...formData,
           empId,
           photoUrl,
-          videoUrl,
+          // videoUrl is completely removed from payload
           reviews
         };
 
@@ -1114,33 +1087,10 @@ ${linkedinBlock}
                   accept="image/*"
                   onChange={(e) => setProfilePhoto(e.target.files[0])}
                 />
-              </div>
+               </div>
+             </div>
 
-              <div className="input-group">
-                <label htmlFor="videoUrl">Intro Video URL (YouTube/Vimeo) (Optional)</label>
-                <input
-                  className="input-field"
-                  type="url"
-                  id="videoUrl"
-                  value={videoUrl}
-                  onChange={(e) => setVideoUrl(e.target.value)}
-                  placeholder="https://www.youtube.com/watch?v=..."
-                />
-              </div>
-
-              <div className="input-group">
-                <label htmlFor="reviewsFile">Candidate Reviews (Excel File) (Optional)</label>
-                <input
-                  className="input-field"
-                  type="file"
-                  id="reviewsFile"
-                  accept=".xlsx, .xls"
-                  onChange={(e) => setReviewsFile(e.target.files[0])}
-                />
-              </div>
-            </div>
-
-            {/* Generate Button */}
+             {/* Generate Button */}
             <div className="sig-gen__actions">
                <button
                  type="button"
