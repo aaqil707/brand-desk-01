@@ -344,7 +344,6 @@ export default function SignatureGenerator({ entity, onBack }) {
           ...formData,
           photoUrl,
           videoUrl,
-          reviews
         };
 
         const saveRes = await profileApi.saveProfile(profileData);
@@ -554,6 +553,7 @@ export default function SignatureGenerator({ entity, onBack }) {
       const textResponse = await response.text();
       const jsonString = textResponse.substring(textResponse.indexOf('{'), textResponse.lastIndexOf('}') + 1);
       const data = JSON.parse(jsonString);
+      console.log("1. RAW SHEET DATA:", data);
 
       if (!data.table || !data.table.rows) throw new Error('Unexpected data format from Google Sheets.');
 
@@ -571,46 +571,36 @@ export default function SignatureGenerator({ entity, onBack }) {
 
       if (!foundRow) throw new Error(`Employee ID "${empId}" not found in the sheet.`);
 
-       const parseSheetColumn = (cellData) => {
-         if (!cellData) return [];
-         return String(cellData)
-           .split(/\s*(?:\r?\n|\\n|\/n)\s*/)
-           .map(item => item.trim())
-           .filter(item => item !== '');
-       };
+      const rawReviewsData = foundRow[8]?.v || '';
+      const rawRatingsData = foundRow[7]?.v || '';
 
-       const rawRatings = parseSheetColumn(foundRow[7]?.v);
-       const rawReviews = parseSheetColumn(foundRow[8]?.v);
+      const splitRegex = /\s*(?:\r?\n|\\n|\/n|\||,)\s*/i;
+      const rawReviews = String(rawReviewsData).split(splitRegex).map(r => r.trim()).filter(r => r !== '');
+      const rawRatings = String(rawRatingsData).split(splitRegex).map(r => r.trim()).filter(r => r !== '');
+      console.log("2. SPLIT RATINGS ARRAY:", rawRatings);
 
-       const parsedReviews = rawReviews.map((text, index) => {
-         const ratingStr = rawRatings[index] !== undefined ? rawRatings[index] : (rawRatings[0] || '5');
-         
-         const match = String(ratingStr).match(/([0-5](\.\d+)?)/);
-         let ratingNum = match ? parseFloat(match[1]) : 5;
-         ratingNum = Math.max(1, Math.min(5, ratingNum));
+      const parsedReviews = rawReviews.map((text, index) => {
+        let ratingStr = rawRatings[index] !== undefined ? rawRatings[index] : (rawRatings[0] || '5');
+        let numMatch = String(ratingStr).match(/[0-9]+(\.[0-9]+)?/);
+        let ratingNum = numMatch ? parseFloat(numMatch[0]) : 5;
+        ratingNum = Math.max(1, Math.min(5, ratingNum));
 
-         const lastDashIndex = text.lastIndexOf('-');
-         let reviewText = text;
-         let author = 'Verified Candidate';
-         if (lastDashIndex !== -1) {
-           reviewText = text.substring(0, lastDashIndex).trim();
-           author = text.substring(lastDashIndex + 1).trim();
-         }
+        const lastDashIndex = text.lastIndexOf('-');
+        let reviewText = text;
+        let author = 'Verified Candidate';
+        if (lastDashIndex !== -1) {
+          reviewText = text.substring(0, lastDashIndex).trim();
+          author = text.substring(lastDashIndex + 1).trim();
+        }
 
-         return {
-           text: reviewText,
-           rating: ratingNum,
-           author: author
-         };
-       });
+        return { text: reviewText, rating: ratingNum, author: author };
+      });
 
-      const res = await profileApi.updateReview(inputProfileId, parsedReviews);
-      if (res.success) {
-        setSheetSuccess('Reviews updated successfully for the selected profile!');
-        setFetchedReview(parsedReviews);
-      } else {
-        throw new Error(res.message || 'Failed to update reviews on server.');
-      }
+      console.log("3. FINAL PAYLOAD:", parsedReviews);
+
+      // Removed call to profileApi.updateReview as we now fetch live
+      setSheetSuccess(`Successfully fetched data for Employee ID ${empId}`);
+      setFetchedReview(parsedReviews);
     } catch (err) {
       setSheetError(err.message || 'Error updating reviews.');
     } finally {
@@ -656,7 +646,7 @@ export default function SignatureGenerator({ entity, onBack }) {
 <div style="font-size: 10.67px !important; margin-bottom: 3px !important; font-family: 'Montserrat', Arial, sans-serif !important;"><img src="https://img.icons8.com/ios-filled/12/000000/phone.png" alt="P" width="12" height="12" style="vertical-align: middle; border: none; margin-right: 4px;"> ${fp}</div>
 <div style="font-size: 10.67px !important; margin-bottom: 6px !important; font-family: 'Montserrat', Arial, sans-serif !important;"><img src="https://img.icons8.com/ios-filled/12/000000/email.png" alt="E" width="12" height="12" style="vertical-align: middle; border: none; margin-right: 4px;"> <a href="mailto:${formData.email}" style="color: #0066cc !important; text-decoration: none !important;">${formData.email}</a></div>
 ${linkedinBlock}
-<div><a href="${window.location.origin}/profile/${profileId}" style="color: rgb(11, 11, 11) !important; text-decoration: none !important; font-size: 10.67px !important; font-weight: bold !important; font-style: italic !important; font-family: 'Montserrat', Arial, sans-serif !important;">To know more, click here</a></div>
+<div><a href="${window.location.origin}/profile/${profileId}" target="_blank" rel="noopener noreferrer" style="color: rgb(11, 11, 11) !important; text-decoration: none !important; font-size: 10.67px !important; font-weight: bold !important; font-style: italic !important; font-family: 'Montserrat', Arial, sans-serif !important;">To know more, click here</a></div>
 </td>
 </tr>
 </table>
@@ -690,7 +680,7 @@ ${linkedinBlock}
 <tbody>
 <tr>
 <td width="80" valign="top" style="padding-right: 20px; border: none;">
-<a href="https://www.vdart.com" target="_blank" rel="noreferrer" style="border: none; text-decoration: none;">
+<a href="https://www.vdart.com" target="_blank" rel="noopener noreferrer" style="border: none; text-decoration: none;">
 <img src="${config.logo}" alt="${entity.title}" width="90" style="display: block; max-width: 110px; height: auto; border: none;" />
 </a>
 </td>
@@ -701,7 +691,7 @@ ${linkedinBlock}
 <div style="font-size: 10.67px; margin-bottom: 6px; font-family: 'Montserrat', Arial, sans-serif;"><img src="https://img.icons8.com/ios-filled/12/000000/email.png" alt="E" width="12" height="12" style="vertical-align: middle; border: none; margin-right: 4px;" /> <a href="mailto:${formData.email}" style="color: ${config.linkColor}; text-decoration: none; border: none;">${formData.email}</a></div>
 ${linkedinBlock}
 <div>
-<a href="${window.location.origin}/profile/${profileId}" style="color: rgb(12, 12, 12); text-decoration: none; font-size: 10.67px; font-weight: bold; font-style: italic; border: none; font-family: 'Montserrat', Arial, sans-serif;">To know more, click here</a>
+<a href="${window.location.origin}/profile/${profileId}" target="_blank" rel="noopener noreferrer" style="color: rgb(12, 12, 12); text-decoration: none; font-size: 10.67px; font-weight: bold; font-style: italic; border: none; font-family: 'Montserrat', Arial, sans-serif;">To know more, click here</a>
 </div>
 </td>
 </tr>
@@ -923,34 +913,25 @@ ${linkedinBlock}
               <div className="sig-gen__input-group" style={{ backgroundColor: '#f0f4f8', padding: '15px', borderRadius: '8px', marginBottom: '20px', border: '1px solid #d1d5db' }}>
                 <label style={{ display: 'block', fontWeight: 'bold', marginBottom: '10px' }}>Fetch Data via Google Sheets (Optional)</label>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  <div style={{ display: 'flex', gap: '10px' }}>
-                    <input
-                      className="input-field"
-                      type="text"
-                      placeholder="Employee ID"
-                      value={empId}
-                      onChange={(e) => setEmpId(e.target.value)}
-                      style={{ flex: 1 }}
-                    />
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      onClick={handleFetchSheetData}
-                      disabled={isFetchingSheet}
-                      style={{ whiteSpace: 'nowrap' }}
-                    >
-                      {isFetchingSheet ? 'Fetching...' : 'Fetch Data'}
-                    </button>
-                    <button
-                      type="button"
-                      className="btn btn-secondary"
-                      onClick={handleUpdateReview}
-                      disabled={isFetchingSheet || !inputProfileId}
-                      style={{ whiteSpace: 'nowrap' }}
-                    >
-                      Update Review
-                    </button>
-                  </div>
+                    <div style={{ display: 'flex', gap: '10px' }}>
+                      <input
+                        className="input-field"
+                        type="text"
+                        placeholder="Employee ID"
+                        value={empId}
+                        onChange={(e) => setEmpId(e.target.value)}
+                        style={{ flex: 1 }}
+                      />
+                      <button
+                        type="button"
+                        className="btn btn-secondary"
+                        onClick={handleFetchSheetData}
+                        disabled={isFetchingSheet}
+                        style={{ whiteSpace: 'nowrap' }}
+                      >
+                        {isFetchingSheet ? 'Fetching...' : 'Fetch Data'}
+                      </button>
+                    </div>
                   {sheetError && <small className="sig-gen__field-error" style={{ color: '#d9534f' }}>{sheetError}</small>}
                   {sheetSuccess && <small style={{ color: '#28a745', fontSize: '0.85rem' }}>{sheetSuccess}</small>}
                 </div>

@@ -8,6 +8,8 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [liveReviews, setLiveReviews] = useState([]);
+  const [loadingReviews, setLoadingReviews] = useState(true);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -26,6 +28,46 @@ export default function ProfilePage() {
     };
     fetchProfile();
   }, [id]);
+
+  useEffect(() => {
+    const loadLiveReviews = async () => {
+      if (!profile || !profile.employeeId) {
+        // If profile exists but has no employeeId, we can't fetch live reviews.
+        // We should check if we can use the profile id or if it's mandatory.
+        // According to the plan, we use profile.employeeId.
+        if (profile) setLoadingReviews(false);
+        return;
+      }
+
+      try {
+        setLoadingReviews(true);
+        const sheetData = await profileApi.fetchGoogleSheetData(profile.employeeId);
+        
+        const rawReviewsData = sheetData.reviews || sheetData.Reviews || sheetData.Review || '';
+        const rawRatingsData = sheetData.ratings || sheetData.Ratings || sheetData.Rating || sheetData['Review Rating'] || '';
+
+        const splitRegex = /\s*(?:\r?\n|\\n|\/n|\||,)\s*/i;
+        const rawReviews = String(rawReviewsData).split(splitRegex).map(r => r.trim()).filter(r => r !== '');
+        const rawRatings = String(rawRatingsData).split(splitRegex).map(r => r.trim()).filter(r => r !== '');
+
+        const formattedReviews = rawReviews.map((text, index) => {
+          let ratingStr = rawRatings[index] !== undefined ? rawRatings[index] : (rawRatings[0] || '5');
+          let numMatch = String(ratingStr).match(/[0-9]+(\.[0-9]+)?/);
+          let ratingNum = numMatch ? parseFloat(numMatch[0]) : 5;
+          ratingNum = Math.max(1, Math.min(5, ratingNum));
+          return { text, rating: ratingNum };
+        });
+
+        setLiveReviews(formattedReviews);
+      } catch (error) {
+        console.error("Failed to load live reviews:", error);
+      } finally {
+        setLoadingReviews(false);
+      }
+    };
+
+    loadLiveReviews();
+  }, [profile]);
 
   if (loading) {
     return (
@@ -127,67 +169,62 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {profile.reviews && profile.reviews.length > 0 && (
-        <div className="testimonials">
-          <h2>Hear from Placed Candidates</h2>
-          <div className="testimonials-carousel">
-            {profile.reviews.map((review, idx) => {
-              const rating = parseFloat(review.rating) || 5;
-              
-              return (
-                <div className="testimonial-card" key={idx}>
-                  <div className="star-rating" style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px', color: '#FFD700' }}>
-                    {(() => {
-                      let rating = Number(review.rating);
-                      if (isNaN(rating) || rating < 1) rating = 5;
-                      if (rating > 5) rating = 5;
+      {loadingReviews ? (
+        <div className="loading-reviews" style={{ textAlign: 'center', padding: '20px', color: '#0ea5e9', animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}>
+          Loading latest reviews...
+        </div>
+      ) : liveReviews.length === 0 ? (
+        <div className="no-reviews" style={{ textAlign: 'center', padding: '20px', color: '#6b7280' }}>
+          No reviews available.
+        </div>
+      ) : (
+        <div className="testimonials-carousel">
+          {liveReviews.map((review, idx) => (
+            <div className="testimonial-card" key={idx}>
+              <div className="star-rating" style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '8px', color: '#FFD700' }}>
+                {(() => {
+                  let rating = Number(review.rating) || 5;
+                  const fullStars = Math.floor(rating);
+                  const hasHalfStar = (rating % 1) !== 0;
+                  const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
 
-                      const fullStars = Math.floor(rating);
-                      const hasHalfStar = rating % 1 !== 0;
-                      const emptyStars = 5 - fullStars - (hasHalfStar ? 1 : 0);
-
-                      return (
-                        <>
-                          {[...Array(fullStars)].map((_, i) => (
-                            <svg key={`full-${i}`} width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M12 .587l3.668 7.431 8.2 1.192-5.934 5.787 1.4 8.168L12 18.896l-7.334 3.856 1.4-8.168L.132 9.21l8.2-1.192L12 .587z"/>
-                            </svg>
-                          ))}
-
-                          {hasHalfStar && (
-                            <svg key="half" width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
-                              <defs>
-                                <linearGradient id="halfGrad">
-                                  <stop offset="50%" stopColor="currentColor" />
-                                  <stop offset="50%" stopColor="#ccc" />
-                                </linearGradient>
-                              </defs>
-                              <path fill="url(#halfGrad)" d="M12 .587l3.668 7.431 8.2 1.192-5.934 5.787 1.4 8.168L12 18.896l-7.334 3.856 1.4-8.168L.132 9.21l8.2-1.192L12 .587z"/>
-                            </svg>
-                          )}
-
-                          {[...Array(emptyStars)].map((_, i) => (
-                            <svg key={`empty-${i}`} width="20" height="20" fill="#ccc" viewBox="0 0 24 24">
-                              <path d="M12 .587l3.668 7.431 8.2 1.192-5.934 5.787 1.4 8.168L12 18.896l-7.334 3.856 1.4-8.168L.132 9.21l8.2-1.192L12 .587z"/>
-                            </svg>
-                          ))}
-
-                          <span style={{ marginLeft: '8px', fontSize: '0.9rem', fontWeight: 'bold', color: '#555' }}>
-                            {rating}/5
-                          </span>
-                        </>
-                      );
-                    })()}
-                  </div>
-                  <p className="testimonial-text">"{review.text}"</p>
-                  <p className="testimonial-author">- {review.author}</p>
-                </div>
-              );
-            })}
-          </div>
+                  return (
+                    <>
+                      {[...Array(fullStars)].map((_, i) => (
+                        <svg key={`full-${i}`} width="20" height="20" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 .587l3.668 7.431 8.2 1.192-5.934 5.787 1.4 8.168L12 18.896l-7.334 3.856 1.4-8.168L.132 9.21l8.2-1.192L12 .587z"/>
+                        </svg>
+                      ))}
+                      {hasHalfStar && (
+                        <svg key="half" width="20" height="20" viewBox="0 0 24 24">
+                          <defs>
+                            <linearGradient id={`halfGrad-${idx}`}>
+                              <stop offset="50%" stopColor="currentColor" />
+                              <stop offset="50%" stopColor="#ccc" />
+                            </linearGradient>
+                          </defs>
+                          <path fill={`url(#halfGrad-${idx})`} stroke="currentColor" strokeWidth="1" style={{ color: '#FFD700' }} d="M12 .587l3.668 7.431 8.2 1.192-5.934 5.787 1.4 8.168L12 18.896l-7.334 3.856 1.4-8.168L.132 9.21l8.2-1.192L12 .587z"/>
+                        </svg>
+                      )}
+                      {[...Array(emptyStars)].map((_, i) => (
+                        <svg key={`empty-${i}`} width="20" height="20" fill="#ccc" viewBox="0 0 24 24">
+                          <path d="M12 .587l3.668 7.431 8.2 1.192-5.934 5.787 1.4 8.168L12 18.896l-7.334 3.856 1.4-8.168L.132 9.21l8.2-1.192L12 .587z"/>
+                        </svg>
+                      ))}
+                      <span style={{ marginLeft: '8px', fontSize: '0.9rem', fontWeight: 'bold', color: '#555' }}>
+                        {rating}/5
+                      </span>
+                    </>
+                  );
+                })()}
+              </div>
+              <p className="testimonial-text">"{review.text}"</p>
+              <p className="testimonial-author">- Verified Candidate</p>
+            </div>
+          ))}
         </div>
       )}
-
+ 
       <div className="feedback-section">
         <h2>How Was Your Experience?</h2>
         <div className="feedback-buttons">
