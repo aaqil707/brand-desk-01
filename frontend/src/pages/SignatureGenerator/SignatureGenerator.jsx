@@ -408,7 +408,7 @@ export default function SignatureGenerator({ entity, onBack }) {
 
     setIsFetchingSheet(true);
     // Use Google Visualization API to query public sheet data safely without CORS issues
-    const url = 'https://docs.google.com/spreadsheets/d/1d_WRPltqOlzT55bx-tNs0qvd-t9RB9EAeTTsp8m8HdM/gviz/tq?tqx=out:json&gid=1611340410';
+    const url = 'https://docs.google.com/spreadsheets/d/1d_WRPltqOlzT55bx-tNs0qvd-t9RB9EAeTTsp8m8HdM/gviz/tq?tqx=out:json&gid=1611340410&headers=1';
 
     try {
       const response = await fetch(url);
@@ -448,8 +448,8 @@ export default function SignatureGenerator({ entity, onBack }) {
         
         let cellValue = null;
         if (cell) {
-          if (cell.v !== undefined) cellValue = cell.v;
-          else if (cell.f !== undefined) cellValue = cell.f;
+          if (cell.v !== null && cell.v !== undefined) cellValue = cell.v;
+          else if (cell.f !== null && cell.f !== undefined) cellValue = cell.f;
           else cellValue = cell;
         }
         
@@ -463,18 +463,25 @@ export default function SignatureGenerator({ entity, onBack }) {
          throw new Error(`Employee ID "${empId}" not found in the sheet. Please verify the ID is correct and the sheet is published as "Anyone with the link can view".`);
       }
 
+      const getCellValue = (c) => {
+        if (!c) return '';
+        if (c.v !== null && c.v !== undefined) return c.v;
+        if (c.f !== null && c.f !== undefined) return c.f;
+        return '';
+      };
+
       // Extract values: 
       // 0=empid, 1=name, 2=designation, 3=email, 4=linkedin_url, 5=Team lead, 6=Lead name, 7=rating, 8=review
-      const name = foundRow[1]?.v || '';
-      const designation = foundRow[2]?.v || '';
-      const email = foundRow[3]?.v || '';
-      const linkedin_url = foundRow[4]?.v || '';
-      const teamLead = foundRow[5]?.v || '';
-      const leadName = foundRow[6]?.v || '';
-      const ratingRaw = foundRow[7]?.v || '0';
-      const reviewText = foundRow[8]?.v || '';
+      const name = getCellValue(foundRow[1]);
+      const designation = getCellValue(foundRow[2]);
+      const email = getCellValue(foundRow[3]);
+      const linkedin_url = getCellValue(foundRow[4]);
+      const teamLead = getCellValue(foundRow[5]);
+      const leadName = getCellValue(foundRow[6]);
+      const ratingRaw = getCellValue(foundRow[7]) || '0';
+      const reviewText = getCellValue(foundRow[8]);
 
-      const ratings = String(ratingRaw).split(/\/n/).map(r => parseFloat(r.trim()) || 0);
+      const ratings = String(ratingRaw).split(/\/n|\n/).map(r => parseFloat(r.trim()) || 0);
 
       if (name) {
         setFormData(prev => ({ 
@@ -520,6 +527,81 @@ export default function SignatureGenerator({ entity, onBack }) {
       
     } catch (err) {
       setSheetError(err.message || 'Error fetching data.');
+    } finally {
+      setIsFetchingSheet(false);
+    }
+  };
+
+  const handleUpdateReview = async () => {
+    if (!empId) {
+      setSheetError('Please provide an Employee ID to update reviews.');
+      return;
+    }
+    if (!inputProfileId) {
+      setSheetError('Please select a profile to update.');
+      return;
+    }
+
+    setIsFetchingSheet(true);
+    setSheetError('');
+    setSheetSuccess('');
+
+    const url = 'https://docs.google.com/spreadsheets/d/1d_WRPltqOlzT55bx-tNs0qvd-t9RB9EAeTTsp8m8HdM/gviz/tq?tqx=out:json&gid=1611340410';
+
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Failed to fetch from Google Sheets.');
+      const textResponse = await response.text();
+      const jsonString = textResponse.substring(textResponse.indexOf('{'), textResponse.lastIndexOf('}') + 1);
+      const data = JSON.parse(jsonString);
+
+      if (!data.table || !data.table.rows) throw new Error('Unexpected data format from Google Sheets.');
+
+      const rows = data.table.rows;
+      let foundRow = null;
+      for (let i = 0; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row || !row.c) continue;
+        const cellValue = row.c[0]?.v || row.c[0]?.f || row.c[0];
+        if (cellValue !== null && String(cellValue).trim().toLowerCase() === String(empId).trim().toLowerCase()) {
+          foundRow = row.c;
+          break;
+        }
+      }
+
+      if (!foundRow) throw new Error(`Employee ID "${empId}" not found in the sheet.`);
+
+      const ratingRaw = foundRow[7]?.v || '0';
+      const reviewText = foundRow[8]?.v || '';
+      const ratings = String(ratingRaw).split(/\/n/).map(r => parseFloat(r.trim()) || 0);
+      const parsedReviews = [];
+
+      if (reviewText) {
+        const chunks = reviewText.split(/\/n|\/e/).map(s => s.trim()).filter(Boolean);
+        chunks.forEach((chunk, index) => {
+          const lastDashIndex = chunk.lastIndexOf('-');
+          let text, author;
+          if (lastDashIndex !== -1) {
+            text = chunk.substring(0, lastDashIndex).trim();
+            author = chunk.substring(lastDashIndex + 1).trim();
+          } else {
+            text = chunk;
+            author = 'Verified Candidate';
+          }
+          const rating = ratings[index] !== undefined ? ratings[index] : (ratings[0] || 0);
+          parsedReviews.push({ text, author, rating });
+        });
+      }
+
+      const res = await profileApi.updateReview(inputProfileId, parsedReviews);
+      if (res.success) {
+        setSheetSuccess('Reviews updated successfully for the selected profile!');
+        setFetchedReview(parsedReviews);
+      } else {
+        throw new Error(res.message || 'Failed to update reviews on server.');
+      }
+    } catch (err) {
+      setSheetError(err.message || 'Error updating reviews.');
     } finally {
       setIsFetchingSheet(false);
     }
@@ -847,6 +929,15 @@ ${linkedinBlock}
                       style={{ whiteSpace: 'nowrap' }}
                     >
                       {isFetchingSheet ? 'Fetching...' : 'Fetch Data'}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn-secondary"
+                      onClick={handleUpdateReview}
+                      disabled={isFetchingSheet || !inputProfileId}
+                      style={{ whiteSpace: 'nowrap' }}
+                    >
+                      Update Review
                     </button>
                   </div>
                   {sheetError && <small className="sig-gen__field-error" style={{ color: '#d9534f' }}>{sheetError}</small>}

@@ -131,13 +131,58 @@ export default function ProfilePage() {
         <div className="testimonials">
           <h2>Hear from Placed Candidates</h2>
           <div className="testimonials-carousel">
-            {profile.reviews.map((review, idx) => (
-              <div className="testimonial-card" key={idx}>
-                <div className="star-rating">{'★'.repeat(review.rating || 5)}{'☆'.repeat(5 - (review.rating || 5))}</div>
-                <p className="testimonial-text">"{review.text}"</p>
-                <p className="testimonial-author">- {review.author}</p>
-              </div>
-            ))}
+            {profile.reviews.map((review, idx) => {
+              const rating = parseFloat(review.rating) || 5;
+              const fullStars = Math.floor(rating);
+              const decimalPart = rating - fullStars;
+              const emptyStars = 5 - Math.ceil(rating);
+              
+              const starSvg = (type, key) => {
+                if (type === 'full') {
+                  return (
+                    <svg key={key} width="18" height="18" viewBox="0 0 24 24" fill="#FFD700" stroke="#FFD700" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '2px' }}>
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                    </svg>
+                  );
+                } else if (type === 'empty') {
+                  return (
+                    <svg key={key} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ccc" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '2px' }}>
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                    </svg>
+                  );
+                } else {
+                  // Partial star using a clip-path
+                  const percentage = Math.round(decimalPart * 100);
+                  return (
+                    <svg key={key} width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ccc" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: '2px' }}>
+                      <defs>
+                        <clipPath id={`clip-${idx}-${key}`}>
+                          <rect x="0" y="0" width={`${percentage}%`} height="100%" />
+                        </clipPath>
+                      </defs>
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" fill="#FFD700" stroke="#FFD700" clipPath={`url(#clip-${idx}-${key})`} />
+                    </svg>
+                  );
+                }
+              };
+              
+              const stars = [];
+              for (let i = 0; i < fullStars; i++) stars.push(starSvg('full', `full-${i}`));
+              if (decimalPart > 0) stars.push(starSvg('partial', 'partial'));
+              for (let i = 0; i < emptyStars; i++) stars.push(starSvg('empty', `empty-${i}`));
+
+              return (
+                <div className="testimonial-card" key={idx}>
+                  <div className="star-rating" style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                    {stars}
+                    <span style={{ marginLeft: '8px', fontWeight: 'bold', color: '#555', fontSize: '0.95rem' }}>{rating.toFixed(1)}</span>
+                  </div>
+                  <p className="testimonial-text">"{review.text}"</p>
+                  <p className="testimonial-author">- {review.author}</p>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

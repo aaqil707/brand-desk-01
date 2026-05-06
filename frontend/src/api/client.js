@@ -176,5 +176,15 @@ export const profileApi = {
   getUserProfiles() {
     return request('/get_user_profiles.php');
   },
+
+  updateReview(id, reviews) {
+    return request('/update_review.php', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ id, reviews }),
+    });
+  },
 };
 
