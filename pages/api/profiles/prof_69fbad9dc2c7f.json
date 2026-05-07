@@ -4,18 +4,23 @@
     "title": "Data Analyst",
     "countryCode": "+91",
     "phone": "9876543210",
-    "email": "charlie.davis@vdartdigital.com",
-    "linkedin": "https:\/\/linkedin.com\/in\/charliedavis",
+    "email": "charlie.davis@vdartinc.com",
+    "linkedin": "https:\/\/linkedin.com\/in\/charlie",
     "teamLead": "No",
     "leadName": "Alice Smith",
-    "empId": "EMP002",
     "photoUrl": "",
+    "videoUrl": "",
+    "updated_at": "2026-05-07 16:36:19",
     "reviews": [
         {
-            "text": "Strong analytical skills, but needs to improve on presentation and communication.",
-            "author": "Verified Candidate",
-            "rating": 3.8
+            "text": "Excellent performer, 123 consistently meets all deadlines and writes clean code.",
+            "rating": 4,
+            "author": "sarah m"
+        },
+        {
+            "text": "good work",
+            "rating": 3,
+            "author": "aaqil i"
         }
-    ],
-    "updated_at": "2026-05-06 23:07:55"
+    ]
 }

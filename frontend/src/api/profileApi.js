@@ -37,3 +37,20 @@ export async function generateProfile(file, entity, uploadMethod = 'manual', emp
     throw error;
   }
 }
+
+export async function syncProfileWithSheet(profileId) {
+  try {
+    const response = await fetch(`${API_BASE}/sync_sheet.php?profile_id=${profileId}`);
+    if (!response.ok) {
+      throw new Error(`Server error: ${response.status}`);
+    }
+    const data = await response.json();
+    if (!data.success) {
+      throw new Error(data.error || 'Sync failed');
+    }
+    return data.data;
+  } catch (error) {
+    console.error('Failed to sync profile with sheet:', error);
+    return null;
+  }
+}

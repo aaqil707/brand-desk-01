@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { profileApi } from '../../api/client';
+import { syncProfileWithSheet } from '../../api/profileApi';
 import './ProfilePage.css';
 
 export default function ProfilePage() {
@@ -28,35 +29,13 @@ export default function ProfilePage() {
   }, [id]);
 
   useEffect(() => {
-    if (!profile?.empId) return;
+    if (!id) return;
 
     const intervalId = setInterval(async () => {
       try {
-        const response = await fetch('https://docs.google.com/spreadsheets/d/1d_WRPltqOlzT55bx-tNs0qvd-t9RB9EAeTTsp8m8HdM/gviz/tq?tqx=out:json&gid=1611340410');
-        const text = await response.text();
-        const jsonString = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
-        const data = JSON.parse(jsonString);
-        const { cols, rows } = data.table;
-
-        const empIdColIndex = cols.findIndex(col => col.label === 'empId');
-        const nameColIndex = cols.findIndex(col => col.label === 'Name');
-        const titleColIndex = cols.findIndex(col => col.label === 'Designation');
-        const reviewsColIndex = cols.findIndex(col => col.label === 'Reviews');
-
-        if (empIdColIndex === -1) return;
-
-        const row = rows.find(r => r.c[empIdColIndex]?.v === profile.empId);
-        if (row) {
-          const newName = row.c[nameColIndex]?.v;
-          const newTitle = row.c[titleColIndex]?.v;
-          const newReviews = row.c[reviewsColIndex]?.v;
-
-          setProfile(prev => ({
-            ...prev,
-            name: newName || prev.name,
-            title: newTitle || prev.title,
-            reviews: newReviews ? (typeof newReviews === 'string' ? JSON.parse(newReviews) : newReviews) : prev.reviews
-          }));
+        const updatedProfile = await syncProfileWithSheet(id);
+        if (updatedProfile) {
+          setProfile(updatedProfile);
         }
       } catch (err) {
         console.error('Polling error:', err);
@@ -64,7 +43,7 @@ export default function ProfilePage() {
     }, 5000);
 
     return () => clearInterval(intervalId);
-  }, [profile?.empId]);
+  }, [id]);
 
   if (loading) {
     return (
