@@ -40,17 +40,25 @@ export async function generateProfile(file, entity, uploadMethod = 'manual', emp
 
 export async function syncProfileWithSheet(profileId) {
   try {
-    const response = await fetch(`${API_BASE}/sync_sheet.php?profile_id=${profileId}`);
+    // Strip .json if it was accidentally passed from the frontend
+    const cleanId = profileId.replace('.json', '');
+    
+    const response = await fetch(`${API_BASE}/sync_sheet.php?profile_id=${cleanId}`, {
+      method: 'GET',
+      credentials: 'include',
+    });
+
+    const responseText = await response.text();
+    const data = JSON.parse(responseText);
+
     if (!response.ok) {
-      throw new Error(`Server error: ${response.status}`);
+      throw new Error(data.message || `Server error: ${response.status}`);
     }
-    const data = await response.json();
-    if (!data.success) {
-      throw new Error(data.error || 'Sync failed');
-    }
-    return data.data;
+
+    return data;
   } catch (error) {
-    console.error('Failed to sync profile with sheet:', error);
-    return null;
+    console.error(`Failed to sync profile with sheet:`, error.message);
+    // Return null instead of throwing, so the 5-second interval doesn't break
+    return null; 
   }
 }

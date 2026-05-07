@@ -6,7 +6,7 @@
     "phone": "9876543210",
     "email": "alice.smith@vdartinc.com",
     "linkedin": "linkedin.com\/in\/alicesmith1",
-    "teamLead": "yes",
+    "teamLead": "no",
     "leadName": "Bob Johnson",
     "empId": "EMP001",
     "photoUrl": "",
@@ -14,13 +14,13 @@
         {
             "text": "Excellent performer, 123 consistently meets all deadlines and writes clean code.",
             "author": "sarah m",
-            "rating": 4
+            "rating": 4.3
         },
         {
             "text": "good work",
             "author": "aaqil i",
-            "rating": 3
+            "rating": 2
         }
     ],
-    "updated_at": "2026-05-07 16:49:46"
+    "updated_at": "2026-05-07 17:09:15"
 }

@@ -29,13 +29,40 @@ export default function ProfilePage() {
   }, [id]);
 
   useEffect(() => {
-    if (!id) return;
+    if (!profile?.empId) return;
 
     const intervalId = setInterval(async () => {
       try {
-        const updatedProfile = await syncProfileWithSheet(id);
-        if (updatedProfile) {
-          setProfile(updatedProfile);
+        // 1. Create a unique timestamp to bypass Google's cache
+        const cacheBuster = Date.now(); 
+        
+        // 2. Append it to the URL as a dummy parameter (&_cb=...)
+        const response = await fetch(`https://docs.google.com/spreadsheets/d/1d_WRPltqOlzT55bx-tNs0qvd-t9RB9EAeTTsp8m8HdM/gviz/tq?tqx=out:json&gid=1611340410&_cb=${cacheBuster}`);
+        
+        const text = await response.text();
+        const jsonString = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
+        const data = JSON.parse(jsonString);
+        const { cols, rows } = data.table;
+
+        const empIdColIndex = cols.findIndex(col => col.label === 'empId');
+        const nameColIndex = cols.findIndex(col => col.label === 'Name');
+        const titleColIndex = cols.findIndex(col => col.label === 'Designation');
+        const reviewsColIndex = cols.findIndex(col => col.label === 'Reviews');
+
+        if (empIdColIndex === -1) return;
+
+        const row = rows.find(r => r.c[empIdColIndex]?.v === profile.empId);
+        if (row) {
+          const newName = row.c[nameColIndex]?.v;
+          const newTitle = row.c[titleColIndex]?.v;
+          const newReviews = row.c[reviewsColIndex]?.v;
+
+          setProfile(prev => ({
+            ...prev,
+            name: newName || prev.name,
+            title: newTitle || prev.title,
+            reviews: newReviews ? (typeof newReviews === 'string' ? JSON.parse(newReviews) : newReviews) : prev.reviews
+          }));
         }
       } catch (err) {
         console.error('Polling error:', err);
@@ -43,7 +70,7 @@ export default function ProfilePage() {
     }, 5000);
 
     return () => clearInterval(intervalId);
-  }, [id]);
+  }, [profile?.empId]);
 
   if (loading) {
     return (
