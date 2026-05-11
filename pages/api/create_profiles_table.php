@@ -1,4 +1,5 @@
 <?php
+require_once 'cors_config.php';
 require_once 'db.php';
 try {
     $conn->exec("CREATE TABLE IF NOT EXISTS user_profiles (

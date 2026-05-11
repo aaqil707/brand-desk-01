@@ -6,30 +6,54 @@ import './ProfilePage.css';
 
 export default function ProfilePage() {
   const { id } = useParams();
-  const [profile, setProfile] = useState(null);
+  const [dropdownOptions, setDropdownOptions] = useState([]);
+  const [selectedProfileId, setSelectedProfileId] = useState(id || null);
+  const [activeProfileData, setActiveProfileData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    const initializeProfiles = async () => {
       try {
-        const response = await profileApi.getProfile(id);
-        if (response.success && response.data) {
-          setProfile(response.data);
+        const response = await profileApi.getUserProfiles();
+        if (response.success && Array.isArray(response.data)) {
+          setDropdownOptions(response.data);
         } else {
-          setError(response.message || 'Profile not found');
+          console.error('Failed to load profile options:', response.message);
         }
       } catch (err) {
-        setError('Failed to load profile');
-      } finally {
-        setLoading(false);
+        console.error('Error fetching profiles:', err);
       }
     };
-    fetchProfile();
-  }, [id]);
+    initializeProfiles();
+  }, []);
+
+  const fetchProfile = async (idToFetch) => {
+    if (!idToFetch) return;
+    setLoading(true);
+    try {
+      const response = await profileApi.getProfile(idToFetch);
+      if (response.success && response.data) {
+        setActiveProfileData(response.data);
+        setError('');
+      } else {
+        setError(response.message || 'Profile not found');
+      }
+    } catch (err) {
+      setError('Failed to load profile');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    if (!profile?.empId) return;
+    if (selectedProfileId) {
+      fetchProfile(selectedProfileId);
+    }
+  }, []); // Only on mount
+
+  useEffect(() => {
+    if (!activeProfileData?.empId) return;
 
     const intervalId = setInterval(async () => {
       try {
@@ -51,18 +75,19 @@ export default function ProfilePage() {
 
         if (empIdColIndex === -1) return;
 
-        const row = rows.find(r => r.c[empIdColIndex]?.v === profile.empId);
+        const row = rows.find(r => r.c[empIdColIndex]?.v === activeProfileData.empId);
         if (row) {
           const newName = row.c[nameColIndex]?.v;
           const newTitle = row.c[titleColIndex]?.v;
           const newReviews = row.c[reviewsColIndex]?.v;
 
-          setProfile(prev => ({
-            ...prev,
-            name: newName || prev.name,
-            title: newTitle || prev.title,
-            reviews: newReviews ? (typeof newReviews === 'string' ? JSON.parse(newReviews) : newReviews) : prev.reviews
-          }));
+           setActiveProfileData(prev => ({
+             ...prev,
+             name: newName || prev.name,
+             title: newTitle || prev.title,
+             reviews: newReviews ? (typeof newReviews === 'string' ? JSON.parse(newReviews) : newReviews) : prev.reviews
+           }));
+
         }
       } catch (err) {
         console.error('Polling error:', err);
@@ -70,7 +95,40 @@ export default function ProfilePage() {
     }, 5000);
 
     return () => clearInterval(intervalId);
-  }, [profile?.empId]);
+  }, [activeProfileData?.empId]);
+
+  const handleLoadProfile = async () => {
+    if (!selectedProfileId) return;
+    await fetchProfile(selectedProfileId);
+  };
+
+  const handleDeleteProfile = async () => {
+    if (!activeProfileData?.id) return;
+    const profileId = activeProfileData.id;
+
+    if (!window.confirm('Are you sure you want to delete this profile? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/profiles/delete_profile.php?id=${profileId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        setDropdownOptions(prev => prev.filter(option => option.id !== profileId));
+        setActiveProfileData(null);
+        setSelectedProfileId(null);
+        alert('Profile deleted successfully');
+      } else {
+        const data = await response.json();
+        alert(`Error deleting profile: ${data.error || 'Unknown error'}`);
+      }
+    } catch (err) {
+      console.error('Deletion error:', err);
+      alert('Failed to delete profile. Please try again.');
+    }
+  };
 
   if (loading) {
     return (
@@ -81,7 +139,7 @@ export default function ProfilePage() {
     );
   }
 
-  if (error || !profile) {
+  if (error || !activeProfileData) {
     return (
       <div className="profile-page-error">
         <h2>Oops!</h2>
@@ -99,25 +157,52 @@ export default function ProfilePage() {
         </span>
       </div>
 
+      <div className="profile-management card" style={{ marginBottom: '2rem', padding: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap' }}>
+        <div className="management-item" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <label htmlFor="profile-select" style={{ fontWeight: 'bold' }}>Select Profile:</label>
+          <select
+            id="profile-select"
+            className="input-field"
+            value={selectedProfileId || ''}
+            onChange={(e) => setSelectedProfileId(e.target.value)}
+            style={{ minWidth: '200px' }}
+          >
+            <option value="">-- Select a Profile --</option>
+            {dropdownOptions.map(opt => (
+              <option key={opt.id} value={opt.id}>{opt.name || opt.id}</option>
+            ))}
+          </select>
+        </div>
+        <button className="btn btn-primary" onClick={handleLoadProfile} disabled={!selectedProfileId}>
+          Load Profile
+        </button>
+        {activeProfileData && (
+          <button className="btn btn-danger" onClick={handleDeleteProfile} style={{ backgroundColor: '#dc3545', color: 'white', border: 'none' }}>
+            Delete Profile
+          </button>
+        )}
+      </div>
+
       <div className="hero-section">
         <h1>Meet Your Future Recruiter</h1>
         <p>I'm here to guide you to your next career opportunity.</p>
       </div>
 
-      <div className="card recruiter-info">
-        <img
-          src={profile.photoUrl || "https://via.placeholder.com/120/cccccc/ffffff?text=Photo"}
-          alt="Recruiter"
-          className="profile-photo"
-        />
-        <h2 className="recruiter-name">{profile.name}</h2>
-        <p className="recruiter-title">{profile.title}</p>
-        {(profile.teamLead === 'Yes' || profile.teamLead === 'yes' || profile.leadName) && (
-          <div className="recruiter-lead-info" style={{ marginTop: '10px', fontSize: '0.9rem', color: '#555' }}>
-            {profile.teamLead && <p style={{ margin: '2px 0' }}><strong>Team Lead:</strong> {profile.teamLead}</p>}
-            {profile.leadName && <p style={{ margin: '2px 0' }}><strong>Lead Name:</strong> {profile.leadName}</p>}
-          </div>
-        )}
+<div className="card recruiter-info">
+         <img
+           src={activeProfileData.photoUrl || "https://via.placeholder.com/120/cccccc/ffffff?text=Photo"}
+           alt="Recruiter"
+           className="profile-photo"
+         />
+         <h2 className="recruiter-name">{activeProfileData.name}</h2>
+         <p className="recruiter-title">{activeProfileData.title}</p>
+         {(activeProfileData.teamLead === 'Yes' || activeProfileData.teamLead === 'yes' || activeProfileData.leadName) && (
+           <div className="recruiter-lead-info" style={{ marginTop: '10px', fontSize: '0.9rem', color: '#555' }}>
+             {activeProfileData.teamLead && <p style={{ margin: '2px 0' }}><strong>Team Lead:</strong> {activeProfileData.teamLead}</p>}
+             {activeProfileData.leadName && <p style={{ margin: '2px 0' }}><strong>Lead Name:</strong> {activeProfileData.leadName}</p>}
+           </div>
+         )}
+
         <p className="bio">
           My passion is connecting talented people with career-defining roles. Let's work together to find your perfect fit and build a successful future.
         </p>
@@ -144,11 +229,12 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {profile.reviews && profile.reviews.length > 0 && (
-        <div className="testimonials">
-          <h2>Hear from Placed Candidates</h2>
-          <div className="testimonials-carousel">
-            {profile.reviews.map((review, idx) => {
+       {activeProfileData.reviews && activeProfileData.reviews.length > 0 && (
+         <div className="testimonials">
+           <h2>Hear from Placed Candidates</h2>
+           <div className="testimonials-carousel">
+             {activeProfileData.reviews.map((review, idx) => {
+
               const rating = parseFloat(review.rating) || 5;
               
               return (
@@ -192,12 +278,13 @@ export default function ProfilePage() {
         </div>
       </div>
 */}
-      <div className="cta-section">
-        {profile.linkedin && (
-          <a href={profile.linkedin} target="_blank" rel="noreferrer" className="cta-button cta-primary">
-            Connect with Me on LinkedIn
-          </a>
-        )}
+       <div className="cta-section">
+         {activeProfileData.linkedin && (
+           <a href={activeProfileData.linkedin} target="_blank" rel="noreferrer" className="cta-button cta-primary">
+             Connect with Me on LinkedIn
+           </a>
+         )}
+
         <a href="https://www.vdart.com/careers" target="_blank" rel="noreferrer" className="cta-button cta-secondary">
           Explore VDart Careers
         </a>

@@ -1,4 +1,5 @@
 <?php
+require_once 'cors_config.php';
 require_once 'db.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['id'])) {

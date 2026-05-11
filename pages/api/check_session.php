@@ -1,4 +1,5 @@
 <?php
+require_once 'cors_config.php';
 header('Content-Type: application/json');
 header('Cache-Control: no-cache, no-store, must-revalidate');
 set_time_limit(5);

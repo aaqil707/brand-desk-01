@@ -1,0 +1,26 @@
+{
+    "name": "Alice Smith",
+    "title": "Software Engineer",
+    "countryCode": "+91",
+    "phone": "9876543210",
+    "email": "alice.smith@vdartinc.com",
+    "linkedin": "linkedin.com\/in\/alicesmith1",
+    "teamLead": "yes",
+    "leadName": "Bob Johnson",
+    "empId": "EMP001",
+    "photoUrl": "",
+    "reviews": [
+        {
+            "text": "Excellent performer, 123 consistently meets all deadlines and writes clean code.",
+            "author": "sarah m",
+            "rating": 5
+        },
+        {
+            "text": "good work",
+            "author": "aaqil i",
+            "rating": 1
+        }
+    ],
+    "id": "prof_6a00bcada383d",
+    "updated_at": "2026-05-10 19:13:17"
+}

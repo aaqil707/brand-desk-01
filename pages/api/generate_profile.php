@@ -1,4 +1,5 @@
 <?php
+require_once 'cors_config.php';
 /**
  * API: Generate Profile Picture & Banner
  * Accepts portrait image upload + entity type, returns JSON with generated image paths.

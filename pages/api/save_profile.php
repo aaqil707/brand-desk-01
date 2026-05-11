@@ -24,6 +24,44 @@ if (!$data) {
     exit;
 }
 
+/**
+ * Sends profile data to Google Apps Script with exponential backoff.
+ */
+function syncToGoogleSheets($data) {
+    $url = 'https://script.google.com/macros/s/YOUR_GOOGLE_SCRIPT_ID/exec'; // REPLACE WITH ACTUAL WEB APP URL
+    $payload = json_encode($data);
+    
+    $maxRetries = 3;
+    $retryCount = 0;
+    $wait = 1; // Initial wait in seconds
+
+    while ($retryCount < $maxRetries) {
+        $ch = curl_init($url);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true); // Important for Google Script redirects
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+
+        $response = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlError = curl_error($ch);
+        curl_close($ch);
+
+        if ($httpCode >= 200 && $httpCode < 300) {
+            return true; // Success
+        }
+
+        $retryCount++;
+        if ($retryCount < $maxRetries) {
+            sleep($wait);
+            $wait *= 2; // Exponential backoff
+        }
+    }
+    return false;
+}
+
 // Generate a unique ID for the profile if not provided
 $id = isset($data['id']) && !empty($data['id']) ? $data['id'] : uniqid('prof_');
 $data['id'] = $id;
@@ -34,6 +72,9 @@ $filePath = $profilesDir . $id . '.json';
 $result = file_put_contents($filePath, json_encode($data, JSON_PRETTY_PRINT));
 
 if ($result !== false) {
+    // Outbound Sync: Send to Google Sheets
+    syncToGoogleSheets($data);
+
     // If logged in, save to database
     if (!empty($_SESSION['user_id'])) {
         $userId = $_SESSION['user_id'];
