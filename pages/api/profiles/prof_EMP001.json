@@ -1,0 +1,21 @@
+{
+    "name": "alice",
+    "title": "Software Engineer",
+    "email": "alice.smith@vdartinc.com",
+    "linkedin": "linkedin.com/in/alicesmith1",
+    "teamLead": "no",
+    "leadName": "Bob Johnson",
+    "updated_at": "2026-05-11 17:58:54",
+    "reviews": [
+        {
+            "text": "Excellent performer, consistently meets all deadlines and writes clean code.",
+            "author": "sarah m",
+            "rating": 455
+        },
+        {
+            "text": "good work",
+            "author": "aaqil i /e",
+            "rating": 5
+        }
+    ]
+}

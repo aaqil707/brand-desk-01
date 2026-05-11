@@ -1,0 +1,16 @@
+{
+    "name": "Bob Johnson",
+    "title": "Engineering Manager",
+    "email": "bob.johnson@example.com",
+    "linkedin": "linkedin.com/in/bobjohnson6",
+    "teamLead": "Yes",
+    "leadName": "Sarah Lee",
+    "updated_at": "2026-05-11 18:01:44",
+    "reviews": [
+        {
+            "text": "Great mentor and technical leader. Keeps the engineering team well",
+            "author": "aligned.",
+            "rating": 47
+        }
+    ]
+}

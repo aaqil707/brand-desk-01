@@ -1,0 +1,16 @@
+{
+    "name": "Charlie D",
+    "title": "Data Analyst",
+    "email": "charlie.davis@example.com",
+    "linkedin": "linkedin.com/in/charliedavis2",
+    "teamLead": "No",
+    "leadName": "Alice Smith",
+    "updated_at": "2026-05-11 18:02:16",
+    "reviews": [
+        {
+            "text": "Strong analytical skills, but needs to improve on presentation and communication.",
+            "author": "Unknown",
+            "rating": 38
+        }
+    ]
+}

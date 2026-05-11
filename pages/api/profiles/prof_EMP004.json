@@ -1,0 +1,16 @@
+{
+    "name": "Frank Thomas",
+    "title": "UX Designer",
+    "email": "frank.thomas@example.com",
+    "linkedin": "linkedin.com/in/frankthomas4",
+    "teamLead": "No",
+    "leadName": "Eve Martinez",
+    "updated_at": "2026-05-11 18:01:35",
+    "reviews": [
+        {
+            "text": "Very creative and collaborates well with developers to improve user experience.",
+            "author": "Unknown",
+            "rating": 42
+        }
+    ]
+}
