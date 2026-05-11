@@ -28,7 +28,7 @@ if (!$data) {
  * Sends profile data to Google Apps Script with exponential backoff.
  */
 function syncToGoogleSheets($data) {
-    $url = 'https://script.google.com/macros/s/YOUR_GOOGLE_SCRIPT_ID/exec'; // REPLACE WITH ACTUAL WEB APP URL
+    $url = 'https://script.google.com/macros/s/AKfycbyTELs_YCz2tLeEbP7XQM7WYaEFf8lB6HWeWNjYiJw__6RH-GGp0fnDACA2Ei02bkFqiw/exec'; // REPLACE WITH ACTUAL WEB APP URL
     $payload = json_encode($data);
     
     $maxRetries = 3;

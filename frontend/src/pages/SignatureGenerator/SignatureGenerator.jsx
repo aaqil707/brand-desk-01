@@ -286,6 +286,32 @@ export default function SignatureGenerator({ entity, onBack }) {
       }
     };
 
+    const handleDeleteProfile = async () => {
+      if (!inputProfileId) return;
+
+      if (!window.confirm('Are you sure you want to delete this profile? This action cannot be undone.')) {
+        return;
+      }
+
+      try {
+        const response = await fetch(`/api/profiles/delete_profile.php?id=${inputProfileId}`, {
+          method: 'DELETE',
+        });
+
+        if (response.ok) {
+          setSavedProfiles(prev => prev.filter(option => option.id !== inputProfileId));
+          handleReset(); // Clear the form
+          alert('Profile deleted successfully');
+        } else {
+          const data = await response.json();
+          alert(`Error deleting profile: ${data.error || 'Unknown error'}`);
+        }
+      } catch (err) {
+        console.error('Deletion error:', err);
+        alert('Failed to delete profile. Please try again.');
+      }
+    };
+
   const handleGenerate = async () => {
     // Validate email domain
     if (!formData.email.endsWith(config.emailDomain)) {
@@ -397,7 +423,7 @@ export default function SignatureGenerator({ entity, onBack }) {
 
     setIsFetchingSheet(true);
     // Use Google Visualization API to query public sheet data safely without CORS issues
-    const url = 'https://docs.google.com/spreadsheets/d/1d_WRPltqOlzT55bx-tNs0qvd-t9RB9EAeTTsp8m8HdM/gviz/tq?tqx=out:json&gid=1611340410&headers=1';
+    const url = 'https://docs.google.com/spreadsheets/d/1tOHMOzioUGjjwmJvSlEFHrPrP1hXphk46q8Q_VrejVk/gviz/tq?tqx=out:json&headers=1';
 
     try {
       const response = await fetch(url);
@@ -535,7 +561,7 @@ export default function SignatureGenerator({ entity, onBack }) {
     setSheetError('');
     setSheetSuccess('');
 
-    const url = 'https://docs.google.com/spreadsheets/d/1d_WRPltqOlzT55bx-tNs0qvd-t9RB9EAeTTsp8m8HdM/gviz/tq?tqx=out:json&gid=1611340410';
+    const url = 'https://docs.google.com/spreadsheets/d/1tOHMOzioUGjjwmJvSlEFHrPrP1hXphk46q8Q_VrejVk/gviz/tq?tqx=out:json';
 
     try {
       const response = await fetch(url);
@@ -960,12 +986,24 @@ ${linkedinBlock}
                       id="inputProfileId"
                       value={inputProfileId}
                       onChange={handleProfileSelect}
+                      style={{ flex: 1 }}
                     >
                       <option value="">-- Create New Profile --</option>
                       {savedProfiles.map(p => (
                         <option key={p.id} value={p.id}>{p.name} ({p.id}) - {new Date(p.date).toLocaleDateString()}</option>
                       ))}
                     </select>
+                    
+                    {inputProfileId && (
+                      <button 
+                        type="button" 
+                        className="btn btn-danger" 
+                        onClick={handleDeleteProfile}
+                        style={{ backgroundColor: '#dc3545', color: 'white', border: 'none', padding: '0 15px', borderRadius: '4px', whiteSpace: 'nowrap' }}
+                      >
+                        Delete
+                      </button>
+                    )}
                   </div>
                 </div>
 

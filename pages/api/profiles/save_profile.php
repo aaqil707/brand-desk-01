@@ -30,7 +30,7 @@ try {
     }
 
     // Outbound Sync to Google Sheets
-    $url = 'https://script.google.com/macros/s/YOUR_GOOGLE_SCRIPT_ID/exec';
+    $url = 'https://script.google.com/macros/s/AKfycbyTELs_YCz2tLeEbP7XQM7WYaEFf8lB6HWeWNjYiJw__6RH-GGp0fnDACA2Ei02bkFqiw/exec';
     $payload = json_encode($data);
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);

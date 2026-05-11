@@ -18,7 +18,7 @@ if (file_exists($filePath)) {
 
     if (isset($profile['empId']) && !empty($profile['empId'])) {
         $empId = $profile['empId'];
-        $googleUrl = 'https://docs.google.com/spreadsheets/d/1d_WRPltqOlzT55bx-tNs0qvd-t9RB9EAeTTsp8m8HdM/gviz/tq?tqx=out:json&gid=1611340410';
+        $googleUrl = 'https://docs.google.com/spreadsheets/d/1tOHMOzioUGjjwmJvSlEFHrPrP1hXphk46q8Q_VrejVk/gviz/tq?tqx=out:json';
         
         $response = @file_get_contents($googleUrl);
         if ($response) {

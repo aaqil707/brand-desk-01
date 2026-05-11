@@ -25,7 +25,7 @@ if (!$currentData || !isset($currentData['empId'])) {
 }
 
 $empId = $currentData['empId'];
-$googleUrl = 'https://docs.google.com/spreadsheets/d/1d_WRPltqOlzT55bx-tNs0qvd-t9RB9EAeTTsp8m8HdM/gviz/tq?tqx=out:json&gid=1611340410&_cb=' . time();
+$googleUrl = 'https://docs.google.com/spreadsheets/d/1tOHMOzioUGjjwmJvSlEFHrPrP1hXphk46q8Q_VrejVk/gviz/tq?tqx=out:json&_cb=' . time();
 
 $response = @file_get_contents($googleUrl);
 if ($response === false) {

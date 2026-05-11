@@ -61,7 +61,7 @@ export default function ProfilePage() {
         const cacheBuster = Date.now(); 
         
         // 2. Append it to the URL as a dummy parameter (&_cb=...)
-        const response = await fetch(`https://docs.google.com/spreadsheets/d/1d_WRPltqOlzT55bx-tNs0qvd-t9RB9EAeTTsp8m8HdM/gviz/tq?tqx=out:json&gid=1611340410&_cb=${cacheBuster}`);
+        const response = await fetch(`https://docs.google.com/spreadsheets/d/1tOHMOzioUGjjwmJvSlEFHrPrP1hXphk46q8Q_VrejVk/gviz/tq?tqx=out:json&_cb=${cacheBuster}`);
         
         const text = await response.text();
         const jsonString = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
@@ -102,34 +102,6 @@ export default function ProfilePage() {
     await fetchProfile(selectedProfileId);
   };
 
-  const handleDeleteProfile = async () => {
-    if (!activeProfileData?.id) return;
-    const profileId = activeProfileData.id;
-
-    if (!window.confirm('Are you sure you want to delete this profile? This action cannot be undone.')) {
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/profiles/delete_profile.php?id=${profileId}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        setDropdownOptions(prev => prev.filter(option => option.id !== profileId));
-        setActiveProfileData(null);
-        setSelectedProfileId(null);
-        alert('Profile deleted successfully');
-      } else {
-        const data = await response.json();
-        alert(`Error deleting profile: ${data.error || 'Unknown error'}`);
-      }
-    } catch (err) {
-      console.error('Deletion error:', err);
-      alert('Failed to delete profile. Please try again.');
-    }
-  };
-
   if (loading) {
     return (
       <div className="profile-page-loading">
@@ -157,31 +129,7 @@ export default function ProfilePage() {
         </span>
       </div>
 
-      <div className="profile-management card" style={{ marginBottom: '2rem', padding: '1.5rem', display: 'flex', gap: '1rem', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap' }}>
-        <div className="management-item" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <label htmlFor="profile-select" style={{ fontWeight: 'bold' }}>Select Profile:</label>
-          <select
-            id="profile-select"
-            className="input-field"
-            value={selectedProfileId || ''}
-            onChange={(e) => setSelectedProfileId(e.target.value)}
-            style={{ minWidth: '200px' }}
-          >
-            <option value="">-- Select a Profile --</option>
-            {dropdownOptions.map(opt => (
-              <option key={opt.id} value={opt.id}>{opt.name || opt.id}</option>
-            ))}
-          </select>
-        </div>
-        <button className="btn btn-primary" onClick={handleLoadProfile} disabled={!selectedProfileId}>
-          Load Profile
-        </button>
-        {activeProfileData && (
-          <button className="btn btn-danger" onClick={handleDeleteProfile} style={{ backgroundColor: '#dc3545', color: 'white', border: 'none' }}>
-            Delete Profile
-          </button>
-        )}
-      </div>
+      
 
       <div className="hero-section">
         <h1>Meet Your Future Recruiter</h1>
