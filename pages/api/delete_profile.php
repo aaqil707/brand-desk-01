@@ -1,5 +1,5 @@
 <?php
-require_once '../../api/cors_config.php';
+require_once 'cors_config.php';
 
 header('Content-Type: application/json');
 
@@ -25,8 +25,8 @@ try {
     }
 
     $safeId = basename($id);
-    $filename = "prof_{$safeId}.json";
-    $filePath = __DIR__ . '/' . $filename;
+    $filename = str_starts_with($safeId, 'prof_') ? $safeId . '.json' : "prof_{$safeId}.json";
+    $filePath = __DIR__ . '/profiles/' . $filename;
 
     if (!file_exists($filePath)) {
         http_response_code(404);

@@ -294,7 +294,7 @@ export default function SignatureGenerator({ entity, onBack }) {
       }
 
       try {
-        const response = await fetch(`/api/profiles/delete_profile.php?id=${inputProfileId}`, {
+        const response = await fetch(`/api/delete_profile.php?id=${inputProfileId}`, {
           method: 'DELETE',
         });
 

@@ -50,44 +50,23 @@ export default function ProfilePage() {
     if (selectedProfileId) {
       fetchProfile(selectedProfileId);
     }
-  }, []); // Only on mount
+  }, [selectedProfileId]); // re-fetch when the selected profile changes
 
   useEffect(() => {
-    if (!activeProfileData?.empId) return;
+    if (!selectedProfileId) return;
 
     const intervalId = setInterval(async () => {
       try {
-        // 1. Create a unique timestamp to bypass Google's cache
-        const cacheBuster = Date.now(); 
-        
-        // 2. Append it to the URL as a dummy parameter (&_cb=...)
-        const response = await fetch(`https://docs.google.com/spreadsheets/d/1tOHMOzioUGjjwmJvSlEFHrPrP1hXphk46q8Q_VrejVk/gviz/tq?tqx=out:json&_cb=${cacheBuster}`);
-        
-        const text = await response.text();
-        const jsonString = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
-        const data = JSON.parse(jsonString);
-        const { cols, rows } = data.table;
-
-        const empIdColIndex = cols.findIndex(col => col.label === 'empId');
-        const nameColIndex = cols.findIndex(col => col.label === 'Name');
-        const titleColIndex = cols.findIndex(col => col.label === 'Designation');
-        const reviewsColIndex = cols.findIndex(col => col.label === 'Reviews');
-
-        if (empIdColIndex === -1) return;
-
-        const row = rows.find(r => r.c[empIdColIndex]?.v === activeProfileData.empId);
-        if (row) {
-          const newName = row.c[nameColIndex]?.v;
-          const newTitle = row.c[titleColIndex]?.v;
-          const newReviews = row.c[reviewsColIndex]?.v;
-
-           setActiveProfileData(prev => ({
-             ...prev,
-             name: newName || prev.name,
-             title: newTitle || prev.title,
-             reviews: newReviews ? (typeof newReviews === 'string' ? JSON.parse(newReviews) : newReviews) : prev.reviews
-           }));
-
+        const res = await fetch(`/api/poll_profile.php?id=${selectedProfileId}`);
+        const json = await res.json();
+        if (json.success && json.data) {
+          setActiveProfileData(prev => {
+            // Only trigger re-render if data actually changed
+            if (JSON.stringify(prev) !== JSON.stringify(json.data)) {
+              return json.data;
+            }
+            return prev;
+          });
         }
       } catch (err) {
         console.error('Polling error:', err);
@@ -95,7 +74,7 @@ export default function ProfilePage() {
     }, 5000);
 
     return () => clearInterval(intervalId);
-  }, [activeProfileData?.empId]);
+  }, [selectedProfileId]);
 
   const handleLoadProfile = async () => {
     if (!selectedProfileId) return;

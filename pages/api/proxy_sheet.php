@@ -16,7 +16,7 @@ if (!isset($_GET['empId'])) {
 }
 
 $empId = urlencode($_GET['empId']);
-$url = "https://script.google.com/macros/s/AKfycbyTELs_YCz2tLeEbP7XQM7WYaEFf8lB6HWeWNjYiJw__6RH-GGp0fnDACA2Ei02bkFqiw/exec" . $empId;
+$url = "https://script.google.com/macros/s/AKfycbyZVgdDDBNQS48Q2HvFpDnSs-87F-ARL-FcnIt83VvpaJ4890njk_hjxTcbbiBvLlUUAA/exec" . $empId;
 
 // Initialize cURL. Google Apps Script requires following 302 Redirects.
 $ch = curl_init();

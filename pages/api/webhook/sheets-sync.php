@@ -4,6 +4,8 @@ header('Access-Control-Allow-Origin: *');
 header('Access-Control-Allow-Methods: POST');
 header('Access-Control-Allow-Headers: Content-Type');
 
+error_log("[sheets-sync] Incoming payload: " . file_get_contents('php://input'));
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['error' => 'Method Not Allowed']);
@@ -40,8 +42,38 @@ try {
         // But for robustness, we'll create it if it's a valid sync.
     }
 
-    // Aggressively overwrite the local JSON file with the new data
-    if (file_put_contents($filePath, json_encode($data, JSON_PRETTY_PRINT), LOCK_EX) === false) {
+    // Read existing profile if it exists
+    $existingProfile = file_exists($filePath) ? json_decode(file_get_contents($filePath), true) : [];
+
+    // Merge only the fields that come from the sheet
+    $merged = array_merge($existingProfile, [
+      'name'      => $data['name']     ?? $existingProfile['name']     ?? '',
+      'title'     => $data['title']    ?? $existingProfile['title']    ?? '',
+      'email'     => $data['email']    ?? $existingProfile['email']    ?? '',
+      'linkedin'  => $data['linkedin'] ?? $existingProfile['linkedin'] ?? '',
+      'teamLead'  => $data['teamLead'] ?? $existingProfile['teamLead'] ?? 'no',
+      'leadName'  => $data['leadName'] ?? $existingProfile['leadName'] ?? '',
+      'updated_at'=> date('Y-m-d H:i:s'),
+    ]);
+
+    // Handle reviews — only update if the sheet sent review data
+    if (!empty($data['review'])) {
+      $reviews = [];
+      $reviewParts = explode('/n', $data['review']);
+      $ratingParts = explode('/n', $data['rating'] ?? '');
+      foreach ($reviewParts as $i => $text) {
+        $text = trim($text);
+        if (!$text) continue;
+        $parts = explode('-', $text);
+        $author = count($parts) > 1 ? trim(array_pop($parts)) : 'Unknown';
+        $text = trim(implode('-', $parts));
+        $rating = isset($ratingParts[$i]) ? (int) filter_var(trim($ratingParts[$i]), FILTER_SANITIZE_NUMBER_INT) : 5;
+        $reviews[] = ['text' => $text, 'author' => $author, 'rating' => $rating];
+      }
+      $merged['reviews'] = $reviews;
+    }
+
+    if (file_put_contents($filePath, json_encode($merged, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES), LOCK_EX) === false) {
         throw new Exception('Failed to write to profile file: ' . $filename);
     }
 
