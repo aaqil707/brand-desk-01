@@ -1,94 +1,49 @@
 <?php
 header('Content-Type: application/json');
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+require_once __DIR__ . '/db.php';
 
-if (session_status() === PHP_SESSION_NONE) {
-    @session_start();
-}
+if (session_status() === PHP_SESSION_NONE) @session_start();
 
-require_once 'db.php';
+$data = json_decode(file_get_contents('php://input'), true);
+if (!$data) { echo json_encode(['success' => false, 'message' => 'Invalid data']); exit; }
 
-// Directory to store profile JSON files
-$profilesDir = __DIR__ . '/profiles/';
-if (!file_exists($profilesDir)) {
-    mkdir($profilesDir, 0755, true);
-}
+// empId is required for DB-backed profiles. If frontend doesn't send it, fall back to uniqid for legacy generator flow.
+$empId     = trim($data['empId'] ?? '');
+if ($empId === '') $empId = strtoupper(uniqid('GEN'));
+$profileId = "prof_$empId";
 
-// Receive JSON payload
-$input = file_get_contents('php://input');
-$data = json_decode($input, true);
+try {
+    $stmt = $conn->prepare("
+        INSERT INTO recruiter_profiles
+          (empId, profile_id, name, title, phone, email, linkedin, teamLead, leadName, photoUrl)
+        VALUES (?,?,?,?,?,?,?,?,?,?)
+        ON DUPLICATE KEY UPDATE
+          name=VALUES(name), title=VALUES(title), phone=VALUES(phone),
+          email=VALUES(email), linkedin=VALUES(linkedin),
+          teamLead=VALUES(teamLead), leadName=VALUES(leadName), photoUrl=VALUES(photoUrl)
+    ");
+    $stmt->execute([
+        $empId, $profileId,
+        $data['name']     ?? null,
+        $data['title']    ?? null,
+        $data['phone']    ?? null,
+        $data['email']    ?? null,
+        $data['linkedin'] ?? null,
+        strtolower($data['teamLead'] ?? 'no'),
+        $data['leadName'] ?? null,
+        $data['photoUrl'] ?? null,
+    ]);
 
-if (!$data) {
-    echo json_encode(['success' => false, 'message' => 'Invalid data']);
-    exit;
-}
-
-/**
- * Sends profile data to Google Apps Script with exponential backoff.
- */
-function syncToGoogleSheets($data) {
-    $url = 'https://script.google.com/macros/s/AKfycbyZVgdDDBNQS48Q2HvFpDnSs-87F-ARL-FcnIt83VvpaJ4890njk_hjxTcbbiBvLlUUAA/exec'; // REPLACE WITH ACTUAL WEB APP URL
-    $payload = json_encode($data);
-    
-    $maxRetries = 3;
-    $retryCount = 0;
-    $wait = 1; // Initial wait in seconds
-
-    while ($retryCount < $maxRetries) {
-        $ch = curl_init($url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $payload);
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-        curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true); // Important for Google Script redirects
-        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
-
-        $response = curl_exec($ch);
-        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlError = curl_error($ch);
-        curl_close($ch);
-
-        if ($httpCode >= 200 && $httpCode < 300) {
-            return true; // Success
-        }
-
-        $retryCount++;
-        if ($retryCount < $maxRetries) {
-            sleep($wait);
-            $wait *= 2; // Exponential backoff
-        }
-    }
-    return false;
-}
-
-// Generate a unique ID for the profile if not provided
-$id = isset($data['id']) && !empty($data['id']) ? $data['id'] : uniqid('prof_');
-$data['id'] = $id;
-$data['updated_at'] = date('Y-m-d H:i:s');
-
-// Save to file
-$filePath = $profilesDir . $id . '.json';
-$result = file_put_contents($filePath, json_encode($data, JSON_PRETTY_PRINT));
-
-if ($result !== false) {
-    // Outbound Sync: Send to Google Sheets
-    syncToGoogleSheets($data);
-
-    // If logged in, save to database
+    // Preserve the existing user_profiles mapping for logged-in users
     if (!empty($_SESSION['user_id'])) {
-        $userId = $_SESSION['user_id'];
-        $profileName = $data['name'] ?? 'Unknown Profile';
-        try {
-            $stmt = $conn->prepare("INSERT INTO user_profiles (user_id, profile_id, profile_name) VALUES (?, ?, ?) ON DUPLICATE KEY UPDATE profile_name = ?");
-            $stmt->execute([$userId, $id, $profileName, $profileName]);
-        } catch (PDOException $e) {
-            error_log("Failed to insert user profile: " . $e->getMessage());
-        }
+        $name = $data['name'] ?? 'Unknown Profile';
+        $m = $conn->prepare("INSERT INTO user_profiles (user_id, profile_id, profile_name) VALUES (?,?,?)
+                             ON DUPLICATE KEY UPDATE profile_name = VALUES(profile_name)");
+        $m->execute([$_SESSION['user_id'], $profileId, $name]);
     }
-    
-    echo json_encode(['success' => true, 'id' => $id]);
-} else {
-    echo json_encode(['success' => false, 'message' => 'Failed to save profile']);
+
+    echo json_encode(['success' => true, 'id' => $profileId, 'empId' => $empId]);
+} catch (PDOException $e) {
+    error_log("[save_profile] " . $e->getMessage());
+    echo json_encode(['success' => false, 'message' => 'DB error']);
 }
-?>

@@ -248,10 +248,19 @@ if (isset($results['error'])) {
 
     echo json_encode([
         'success' => true,
-        'profile' => '/Pages/' . ltrim($profileRelative, '/'),
-        'banner'  => '/Pages/' . ltrim($bannerRelative, '/'),
+        'profile' => '/pages/' . ltrim($profileRelative, '/'),
+        'banner'  => '/pages/' . ltrim($bannerRelative, '/'),
         'originalName' => $_FILES['portrait']['name'] ?? 'employee_photo',
     ]);
 } else {
     echo json_encode(['success' => false, 'message' => 'Failed to generate images. Please try again.']);
+}
+
+// Save photoUrl to database if employeeId is known
+if (isset($_POST['uploadMethod']) && $_POST['uploadMethod'] === 'employee' && !empty($_POST['employeeId'])) {
+    require_once 'db.php';
+    $empId = $_POST['employeeId'];
+    $photoUrl = '/pages/' . ltrim($profileRelative, '/');
+    $stmt = $conn->prepare("UPDATE recruiter_profiles SET photoUrl = ? WHERE empId = ?");
+    $stmt->execute([$photoUrl, $empId]);
 }

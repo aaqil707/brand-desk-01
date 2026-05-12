@@ -22,7 +22,10 @@ export default function ProfilePage() {
           console.error('Failed to load profile options:', response.message);
         }
       } catch (err) {
-        console.error('Error fetching profiles:', err);
+        // Guard: Silently ignore 401/unauthorized for public visitors
+        if (err.status !== 401) {
+          console.error('Error fetching profiles:', err);
+        }
       }
     };
     initializeProfiles();
@@ -57,16 +60,11 @@ export default function ProfilePage() {
 
     const intervalId = setInterval(async () => {
       try {
-        const res = await fetch(`/api/poll_profile.php?id=${selectedProfileId}`);
-        const json = await res.json();
-        if (json.success && json.data) {
-          setActiveProfileData(prev => {
-            // Only trigger re-render if data actually changed
-            if (JSON.stringify(prev) !== JSON.stringify(json.data)) {
-              return json.data;
-            }
-            return prev;
-          });
+        const response = await profileApi.getProfile(selectedProfileId);
+        if (response.success && response.data) {
+          setActiveProfileData(prev =>
+            JSON.stringify(prev) === JSON.stringify(response.data) ? prev : response.data
+          );
         }
       } catch (err) {
         console.error('Polling error:', err);
@@ -108,7 +106,24 @@ export default function ProfilePage() {
         </span>
       </div>
 
-      
+      {dropdownOptions.length > 0 && (
+        <div className="profile-selector" style={{ textAlign: 'center', margin: '20px 0' }}>
+          <label htmlFor="profile-select" style={{ marginRight: '10px', fontWeight: 'bold' }}>Switch Profile: </label>
+          <select
+            id="profile-select"
+            value={selectedProfileId}
+            onChange={(e) => setSelectedProfileId(e.target.value)}
+            style={{ padding: '5px 10px', borderRadius: '4px', border: '1px solid #ccc' }}
+          >
+            {dropdownOptions.map((opt) => (
+              <option key={opt.profile_id} value={opt.profile_id}>
+                {opt.profile_name || opt.profile_id}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
 
       <div className="hero-section">
         <h1>Meet Your Future Recruiter</h1>
@@ -121,9 +136,17 @@ export default function ProfilePage() {
            alt="Recruiter"
            className="profile-photo"
          />
-         <h2 className="recruiter-name">{activeProfileData.name}</h2>
-         <p className="recruiter-title">{activeProfileData.title}</p>
-         {(activeProfileData.teamLead === 'Yes' || activeProfileData.teamLead === 'yes' || activeProfileData.leadName) && (
+          <h2 className="recruiter-name">{activeProfileData.name}</h2>
+          <p className="recruiter-title">{activeProfileData.title}</p>
+          {activeProfileData.phone && (
+            <p className="recruiter-phone" style={{ margin: '4px 0', color: '#444', fontSize: '0.95rem' }}>
+              <a href={`tel:${activeProfileData.phone}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+                📞 {activeProfileData.phone}
+              </a>
+            </p>
+          )}
+          {(activeProfileData.teamLead === 'Yes' || activeProfileData.teamLead === 'yes' || activeProfileData.leadName) && (
+
            <div className="recruiter-lead-info" style={{ marginTop: '10px', fontSize: '0.9rem', color: '#555' }}>
              {activeProfileData.teamLead && <p style={{ margin: '2px 0' }}><strong>Team Lead:</strong> {activeProfileData.teamLead}</p>}
              {activeProfileData.leadName && <p style={{ margin: '2px 0' }}><strong>Lead Name:</strong> {activeProfileData.leadName}</p>}

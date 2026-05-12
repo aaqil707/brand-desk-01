@@ -1,5 +1,6 @@
 <?php
 require_once 'cors_config.php';
+require_once 'db.php';
 
 header('Content-Type: application/json');
 
@@ -12,10 +13,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'DELETE' && $_SERVER['REQUEST_METHOD'] !== 'P
 try {
     $id = null;
     if ($_SERVER['REQUEST_METHOD'] === 'DELETE') {
-        // Handle DELETE /delete_profile.php?id=...
         $id = $_GET['id'] ?? null;
     } else {
-        // Handle POST /delete_profile.php with id in body
         $input = json_decode(file_get_contents('php://input'), true);
         $id = $input['id'] ?? null;
     }
@@ -24,25 +23,40 @@ try {
         throw new Exception('Profile ID is required');
     }
 
-    $safeId = basename($id);
-    $filename = str_starts_with($safeId, 'prof_') ? $safeId . '.json' : "prof_{$safeId}.json";
-    $filePath = __DIR__ . '/profiles/' . $filename;
+    // The id provided is usually the profile_id (e.g., prof_EMP001)
+    $profileId = $id;
+    $empId = str_replace('prof_', '', $profileId);
 
-    if (!file_exists($filePath)) {
-        http_response_code(404);
-        throw new Exception('Profile not found');
+    $conn->beginTransaction();
+    try {
+        // Delete from recruiter_profiles (cascades to recruiter_reviews)
+        $stmt1 = $conn->prepare("DELETE FROM recruiter_profiles WHERE empId = ?");
+        $stmt1->execute([$empId]);
+
+        // Delete from user_profiles
+        $stmt2 = $conn->prepare("DELETE FROM user_profiles WHERE profile_id = ?");
+        $stmt2->execute([$profileId]);
+
+        $conn->commit();
+    } catch (Exception $e) {
+        $conn->rollBack();
+        throw $e;
     }
 
-    if (!is_writable($filePath)) {
-        http_response_code(500);
-        throw new Exception('Profile file is not writable');
+    // Optionally delete generated images from output/ directory
+    $outputDir = __DIR__ . '/../../output/';
+    if (is_dir($outputDir)) {
+        $files = glob($outputDir . $profileId . '*');
+        if ($files) {
+            foreach ($files as $file) {
+                if (is_file($file)) {
+                    unlink($file);
+                }
+            }
+        }
     }
 
-    if (unlink($filePath)) {
-        echo json_encode(['status' => 'success', 'message' => 'Profile deleted successfully']);
-    } else {
-        throw new Exception('Failed to delete profile file');
-    }
+    echo json_encode(['success' => true, 'message' => 'Profile deleted successfully']);
 } catch (Exception $e) {
     $code = http_response_code() === 200 ? 400 : http_response_code();
     http_response_code($code);
