@@ -106,24 +106,7 @@ export default function ProfilePage() {
         </span>
       </div>
 
-      {dropdownOptions.length > 0 && (
-        <div className="profile-selector" style={{ textAlign: 'center', margin: '20px 0' }}>
-          <label htmlFor="profile-select" style={{ marginRight: '10px', fontWeight: 'bold' }}>Switch Profile: </label>
-          <select
-            id="profile-select"
-            value={selectedProfileId}
-            onChange={(e) => setSelectedProfileId(e.target.value)}
-            style={{ padding: '5px 10px', borderRadius: '4px', border: '1px solid #ccc' }}
-          >
-            {dropdownOptions.map((opt) => (
-              <option key={opt.profile_id} value={opt.profile_id}>
-                {opt.profile_name || opt.profile_id}
-              </option>
-            ))}
-          </select>
-        </div>
-      )}
-
+     
 
       <div className="hero-section">
         <h1>Meet Your Future Recruiter</h1>

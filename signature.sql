@@ -98,7 +98,7 @@ CREATE TABLE IF NOT EXISTS `recruiter_reviews` (
   `position`   INT NOT NULL DEFAULT 0,
   `text`       TEXT,
   `author`     VARCHAR(150) DEFAULT 'Unknown',
-  `rating`     TINYINT DEFAULT 5,
+  `rating`     DECIMAL(3,1) DEFAULT 5.0,
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   INDEX `idx_empid` (`empId`),
   CONSTRAINT `fk_review_emp` FOREIGN KEY (`empId`) REFERENCES `recruiter_profiles`(`empId`) ON DELETE CASCADE

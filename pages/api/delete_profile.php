@@ -1,8 +1,8 @@
 <?php
 require_once 'cors_config.php';
-require_once 'db.php';
-
 header('Content-Type: application/json');
+if (session_status() === PHP_SESSION_NONE) @session_start();
+require_once __DIR__ . '/db.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'DELETE' && $_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
@@ -19,44 +19,25 @@ try {
         $id = $input['id'] ?? null;
     }
 
-    if (!$id) {
-        throw new Exception('Profile ID is required');
+    if (!$id) throw new Exception('Profile ID is required');
+
+    $profileId = trim(basename($id));
+    $empId = preg_replace('/^prof_/', '', $profileId);
+
+    // Verify profile exists in DB
+    $check = $conn->prepare("SELECT empId FROM recruiter_profiles WHERE empId = ? LIMIT 1");
+    $check->execute([$empId]);
+    if (!$check->fetch()) {
+        http_response_code(404);
+        throw new Exception('Profile not found');
     }
 
-    // The id provided is usually the profile_id (e.g., prof_EMP001)
-    $profileId = $id;
-    $empId = str_replace('prof_', '', $profileId);
+    // Delete from recruiter_profiles (cascade deletes reviews via FK)
+    $conn->prepare("DELETE FROM recruiter_profiles WHERE empId = ?")->execute([$empId]);
+    // Also clean up user_profiles mapping
+    $conn->prepare("DELETE FROM user_profiles WHERE profile_id = ?")->execute([$profileId]);
 
-    $conn->beginTransaction();
-    try {
-        // Delete from recruiter_profiles (cascades to recruiter_reviews)
-        $stmt1 = $conn->prepare("DELETE FROM recruiter_profiles WHERE empId = ?");
-        $stmt1->execute([$empId]);
-
-        // Delete from user_profiles
-        $stmt2 = $conn->prepare("DELETE FROM user_profiles WHERE profile_id = ?");
-        $stmt2->execute([$profileId]);
-
-        $conn->commit();
-    } catch (Exception $e) {
-        $conn->rollBack();
-        throw $e;
-    }
-
-    // Optionally delete generated images from output/ directory
-    $outputDir = __DIR__ . '/../../output/';
-    if (is_dir($outputDir)) {
-        $files = glob($outputDir . $profileId . '*');
-        if ($files) {
-            foreach ($files as $file) {
-                if (is_file($file)) {
-                    unlink($file);
-                }
-            }
-        }
-    }
-
-    echo json_encode(['success' => true, 'message' => 'Profile deleted successfully']);
+    echo json_encode(['status' => 'success', 'message' => 'Profile deleted successfully']);
 } catch (Exception $e) {
     $code = http_response_code() === 200 ? 400 : http_response_code();
     http_response_code($code);

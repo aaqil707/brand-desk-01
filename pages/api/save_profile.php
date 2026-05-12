@@ -34,6 +34,25 @@ try {
         $data['photoUrl'] ?? null,
     ]);
 
+    // Save reviews if provided
+    if (!empty($data['reviews']) && is_array($data['reviews'])) {
+        $conn->beginTransaction();
+        $conn->prepare("DELETE FROM recruiter_reviews WHERE empId = ?")->execute([$empId]);
+        $ins = $conn->prepare(
+            "INSERT INTO recruiter_reviews (empId, position, text, author, rating) VALUES (?,?,?,?,?)"
+        );
+        foreach ($data['reviews'] as $pos => $review) {
+            $text   = trim($review['text']   ?? '');
+            $author = trim($review['author'] ?? 'Verified Candidate');
+            $rating = round(floatval($review['rating'] ?? 5.0), 1);
+            $rating = max(1.0, min(5.0, $rating));
+            if ($text !== '') {
+                $ins->execute([$empId, $pos, $text, $author, $rating]);
+            }
+        }
+        $conn->commit();
+    }
+
     // Preserve the existing user_profiles mapping for logged-in users
     if (!empty($_SESSION['user_id'])) {
         $name = $data['name'] ?? 'Unknown Profile';
@@ -44,6 +63,7 @@ try {
 
     echo json_encode(['success' => true, 'id' => $profileId, 'empId' => $empId]);
 } catch (PDOException $e) {
+    if ($conn->inTransaction()) $conn->rollBack();
     error_log("[save_profile] " . $e->getMessage());
     echo json_encode(['success' => false, 'message' => 'DB error']);
 }

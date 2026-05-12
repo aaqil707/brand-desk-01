@@ -1,18 +1,8 @@
 <?php
 header('Content-Type: application/json');
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+if (session_status() === PHP_SESSION_NONE) @session_start();
+require_once __DIR__ . '/db.php';
 
-if (session_status() === PHP_SESSION_NONE) {
-    @session_start();
-}
-
-require_once 'db.php';
-
-// Directory to store profile JSON files
-$profilesDir = __DIR__ . '/profiles/';
-
-// Receive JSON payload
 $input = file_get_contents('php://input');
 $data = json_decode($input, true);
 
@@ -21,35 +11,41 @@ if (!$data || !isset($data['id']) || !isset($data['reviews'])) {
     exit;
 }
 
-$id = $data['id'];
-$reviews = $data['reviews'];
+$profileId = trim($data['id']);
+$reviews   = $data['reviews'];
 
-$filePath = $profilesDir . $id . '.json';
+// Strip prof_ prefix to get empId
+$empId = preg_replace('/^prof_/', '', $profileId);
 
-if (!file_exists($filePath)) {
-    echo json_encode(['success' => false, 'message' => 'Profile not found']);
-    exit;
-}
+try {
+    // Verify the profile exists
+    $check = $conn->prepare("SELECT empId FROM recruiter_profiles WHERE empId = ? LIMIT 1");
+    $check->execute([$empId]);
+    if (!$check->fetch()) {
+        echo json_encode(['success' => false, 'message' => 'Profile not found']);
+        exit;
+    }
 
-// Load existing profile data
-$jsonContent = file_get_contents($filePath);
-$profileData = json_decode($jsonContent, true);
+    // Replace reviews atomically
+    $conn->beginTransaction();
+    $conn->prepare("DELETE FROM recruiter_reviews WHERE empId = ?")->execute([$empId]);
 
-if (!$profileData) {
-    echo json_encode(['success' => false, 'message' => 'Error reading profile data']);
-    exit;
-}
+    $ins = $conn->prepare("INSERT INTO recruiter_reviews (empId, position, text, author, rating) VALUES (?,?,?,?,?)");
+    foreach ($reviews as $pos => $review) {
+        $text   = trim($review['text']   ?? '');
+        $author = trim($review['author'] ?? 'Verified Candidate');
+        $rating = (int) round(floatval($review['rating'] ?? 5));
+        $rating = max(1, min(5, $rating));
+        if ($text !== '') {
+            $ins->execute([$empId, $pos, $text, $author, $rating]);
+        }
+    }
+    $conn->commit();
 
-// Update only the reviews and updated_at timestamp
-$profileData['reviews'] = $reviews;
-$profileData['updated_at'] = date('Y-m-d H:i:s');
-
-// Save back to file
-$result = file_put_contents($filePath, json_encode($profileData, JSON_PRETTY_PRINT));
-
-if ($result !== false) {
     echo json_encode(['success' => true, 'message' => 'Reviews updated successfully']);
-} else {
-    echo json_encode(['success' => false, 'message' => 'Failed to update profile reviews']);
+} catch (PDOException $e) {
+    if ($conn->inTransaction()) $conn->rollBack();
+    error_log("[update_review] " . $e->getMessage());
+    echo json_encode(['success' => false, 'message' => 'Database error']);
 }
 ?>

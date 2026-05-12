@@ -120,7 +120,9 @@ export default function SignatureGenerator({ entity, onBack }) {
       countryCode: '+91',
       phone: '',
       email: '',
-      linkedin: ''
+      linkedin: '',
+      teamLead: '',
+      leadName: ''
     };
   });
   const [emailError, setEmailError] = useState('');
@@ -143,7 +145,7 @@ export default function SignatureGenerator({ entity, onBack }) {
   const [sheetError, setSheetError] = useState('');
   const [sheetSuccess, setSheetSuccess] = useState('');
   const [isFetchingSheet, setIsFetchingSheet] = useState(false);
-  const [fetchedReview, setFetchedReview] = useState('');
+  const [fetchedReview, setFetchedReview] = useState([]);
   const [fetchedRating, setFetchedRating] = useState(0);
 
   // Live polling: fetch profiles every 5 seconds
@@ -195,7 +197,7 @@ export default function SignatureGenerator({ entity, onBack }) {
 
   const formatPhone = (phone) => {
     if (!phone) return '';
-    const cleaned = phone.replace(/\D/g, '');
+    const cleaned = String(phone).replace(/\D/g, '');
     const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
     if (match) {
       return `(${match[1]}) ${match[2]}-${match[3]}`;
@@ -319,7 +321,7 @@ export default function SignatureGenerator({ entity, onBack }) {
       return;
     }
     // Validate phone is 10 digits
-    const phoneDigits = formData.phone.replace(/\D/g, '');
+  const phoneDigits = String(formData.phone || '').replace(/\D/g, '');
     if (phoneDigits.length !== 10) {
       setPhoneError('Phone number must be exactly 10 digits');
       return;
@@ -403,7 +405,7 @@ export default function SignatureGenerator({ entity, onBack }) {
     setPhoneError('');
     setSheetError('');
     setSheetSuccess('');
-    setFetchedReview('');
+    setFetchedReview([]);
     setFetchedRating(0);
     setEmpId('');
     sessionStorage.removeItem('sigGenTab');
@@ -480,30 +482,32 @@ export default function SignatureGenerator({ entity, onBack }) {
 
       const getCellValue = (c) => {
         if (!c) return '';
-        if (c.v !== null && c.v !== undefined) return c.v;
-        if (c.f !== null && c.f !== undefined) return c.f;
+        if (c.v !== null && c.v !== undefined) return String(c.v);
+        if (c.f !== null && c.f !== undefined) return String(c.f);
         return '';
       };
 
-      // Extract values: 
-      // 0=empid, 1=name, 2=designation, 3=email, 4=linkedin_url, 5=Team lead, 6=Lead name, 7=rating, 8=review
+      // Extract values:
+      // 0=empid, 1=name, 2=designation, 3=phone, 4=email, 5=linkedin_url, 6=Team lead, 7=Lead name, 8=rating, 9=review
       const name = getCellValue(foundRow[1]);
       const designation = getCellValue(foundRow[2]);
-      const email = getCellValue(foundRow[3]);
-      const linkedin_url = getCellValue(foundRow[4]);
-      const teamLead = getCellValue(foundRow[5]);
-      const leadName = getCellValue(foundRow[6]);
-      const ratingRaw = getCellValue(foundRow[7]) || '0';
-      const reviewText = getCellValue(foundRow[8]);
+       const phone = getCellValue(foundRow[3]).replace(/\D/g, '').slice(0, 10);
+      const email = getCellValue(foundRow[4]);
+      const linkedin_url = getCellValue(foundRow[5]);
+      const teamLead = getCellValue(foundRow[6]);
+      const leadName = getCellValue(foundRow[7]);
+      const ratingRaw = getCellValue(foundRow[8]) || '0';
+      const reviewText = getCellValue(foundRow[9]);
 
-      const ratings = String(ratingRaw).split(/\/n|\n/).map(r => parseFloat(r.trim()) || 0);
+      const ratings = String(ratingRaw).split(/\s*(?:\/n|\\n|\r?\n|\|)\s*/).map(r => parseFloat(r.trim())).filter(n => !isNaN(n) && n > 0);
 
       if (name) {
-        setFormData(prev => ({ 
-          ...prev, 
-          name, 
-          title: designation, 
-          email, 
+        setFormData(prev => ({
+          ...prev,
+          name,
+          title: designation,
+          phone,
+          email,
           linkedin: linkedin_url,
           teamLead,
           leadName
@@ -587,10 +591,10 @@ export default function SignatureGenerator({ entity, onBack }) {
 
       if (!foundRow) throw new Error(`Employee ID "${empId}" not found in the sheet.`);
 
-      const rawReviewsData = foundRow[8]?.v || '';
-      const rawRatingsData = foundRow[7]?.v || '';
+      const rawReviewsData = foundRow[9]?.v || '';
+      const rawRatingsData = foundRow[8]?.v || '';
 
-      const splitRegex = /\s*(?:\r?\n|\\n|\/n|\|)\s*/i;
+      const splitRegex = /\s*(?:\r?\n|\\n|\/n|\/e|\|)\s*/i;
       const rawReviews = String(rawReviewsData).split(splitRegex).map(r => r.trim()).filter(r => r !== '');
       const rawRatings = String(rawRatingsData).split(splitRegex).map(r => r.trim()).filter(r => r !== '');
       console.log("2. SPLIT RATINGS ARRAY:", rawRatings);
@@ -784,7 +788,7 @@ ${linkedinBlock}
   const phoneDigits = formData.phone.replace(/\D/g, '');
   const isFormFilled = formData.name && formData.title && phoneDigits.length === 10 && formData.email && formData.email.endsWith(config.emailDomain);
   const isComplete = isFormFilled && isGenerated;
-  const formattedPhone = formatPhone(formData.phone);
+  const formattedPhone = formatPhone(String(formData.phone || ''));
 
   return (
     <div className="sig-gen">

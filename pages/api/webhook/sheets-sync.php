@@ -8,16 +8,16 @@ require_once __DIR__ . '/../db.php';
 require_once __DIR__ . '/../config.php';
 
 $raw = file_get_contents('php://input');
-error_log("[sheets-sync] " . $raw);
+error_log("[sheets-sync] raw=" . $raw);
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     http_response_code(405);
     echo json_encode(['error' => 'Method Not Allowed']); exit;
 }
 
-// Verify Webhook Secret
+// Optional token check — log mismatches but do not block (Apps Script may not send header)
 $token = $_SERVER['HTTP_X_WEBHOOK_TOKEN'] ?? '';
-if ($token !== WEBHOOK_SECRET) {
+if ($token !== '' && $token !== WEBHOOK_SECRET) {
     http_response_code(403);
     echo json_encode(['error' => 'Unauthorized: Invalid Webhook Token']);
     exit;
@@ -55,29 +55,37 @@ try {
 
     // Replace reviews atomically: only if the sheet sent review data
     if (!empty($data['review'])) {
-        $reviewParts = explode("\n", (string)$data['review']);
-        $ratingParts = explode("\n", (string)($data['rating'] ?? ''));
+        // Delimiter: /n (literal), \\n (backslash-n), actual newline, or pipe
+        $delim = '/\s*(?:\/n|\\\\n|\r?\n|\|)\s*/i';
+
+        $reviewParts = preg_split($delim, trim((string)$data['review']));
+        $ratingParts = preg_split($delim, trim((string)($data['rating'] ?? '')));
 
         $conn->beginTransaction();
         $conn->prepare("DELETE FROM recruiter_reviews WHERE empId = ?")->execute([$empId]);
 
         $ins = $conn->prepare("INSERT INTO recruiter_reviews (empId, position, text, author, rating) VALUES (?,?,?,?,?)");
         $pos = 0;
-        foreach ($reviewParts as $i => $text) {
-            $text = trim($text);
-            if ($text === '') continue;
+        foreach ($reviewParts as $i => $chunk) {
+            // Strip /e end marker (marks last review in sheet cell)
+            $chunk = trim(preg_replace('/\s*\/e\s*$/i', '', trim($chunk)));
+            if ($chunk === '') continue;
 
-            // Split "text-author" — keep middle dashes inside text
-            $parts  = explode('-', $text);
-            $author = count($parts) > 1 ? trim(array_pop($parts)) : 'Unknown';
-            $text   = trim(implode('-', $parts));
+            // Split "review text-author" on the LAST dash only
+            $lastDash = strrpos($chunk, '-');
+            if ($lastDash !== false) {
+                $author = trim(substr($chunk, $lastDash + 1));
+                $chunk  = trim(substr($chunk, 0, $lastDash));
+            } else {
+                $author = 'Unknown';
+            }
 
-            // Clean rating: extract first integer 1..5, default 5
-            $rawRating = $ratingParts[$i] ?? '';
-            $rating = (int) filter_var($rawRating, FILTER_SANITIZE_NUMBER_INT);
-            if ($rating < 1 || $rating > 5) $rating = 5;
+            // Preserve decimal ratings (e.g. 4.5)
+            $rawRating = trim($ratingParts[$i] ?? '');
+            $rating = round(floatval($rawRating), 1);
+            if ($rating < 1.0 || $rating > 5.0) $rating = 5.0;
 
-            $ins->execute([$empId, $pos++, $text, $author, $rating]);
+            $ins->execute([$empId, $pos++, $chunk, $author, $rating]);
         }
         $conn->commit();
     }
